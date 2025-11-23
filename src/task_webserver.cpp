@@ -1,0 +1,188 @@
+#include "task_webserver.h"
+#include <LittleFS.h>
+#include <ArduinoJson.h>
+#include "config_coreiot.h"
+#include "coreiot.h"
+#include "mainserver.h"  // ✅ Import shared functions
+
+// ==================== PORT 8080 ONLY ====================
+static AsyncWebServer dashboardServer(8080);
+static AsyncWebSocket ws("/ws");
+bool webserver_isrunning = false;
+
+// ==================== WEBSOCKET ====================
+void Webserver_sendata(String data) {
+    if (ws.count() > 0) {
+        ws.textAll(data);
+    }
+}
+
+void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, 
+             AwsEventType type, void *arg, uint8_t *data, size_t len) {
+    if (type == WS_EVT_CONNECT) {
+        Serial.printf("WS #%u connected\n", client->id());
+    }
+    else if (type == WS_EVT_DISCONNECT) {
+        Serial.printf("WS #%u disconnected\n", client->id());
+    }
+    else if (type == WS_EVT_DATA) {
+        AwsFrameInfo *info = (AwsFrameInfo *)arg;
+        if (info->opcode == WS_TEXT) {
+            String msg = String((char*)data).substring(0, len);
+            handleWebSocketMessage(msg);
+        }
+    }
+}
+
+// ==================== COREIOT API ====================
+void setupCoreIOTAPI() {
+    DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
+    DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "Content-Type");
+
+    // GET config
+    dashboardServer.on("/api/coreiot/config", HTTP_GET, [](AsyncWebServerRequest *req){
+        StaticJsonDocument<512> doc;
+        doc["server"] = coreiot_server;
+        doc["port"] = coreiot_port;
+        doc["client_id"] = coreiot_client_id;
+        doc["username"] = coreiot_username;
+        doc["password_set"] = (coreiot_password.length() > 0);
+        
+        String res;
+        serializeJson(doc, res);
+        req->send(200, "application/json", res);
+    });
+
+    // POST config
+    dashboardServer.on("/api/coreiot/config", HTTP_POST,
+        [](AsyncWebServerRequest *req){},
+        NULL,
+        [](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t, size_t){
+            StaticJsonDocument<512> doc;
+            if (deserializeJson(doc, data, len)) {
+                req->send(400, "application/json", "{\"success\":false}");
+                return;
+            }
+            
+            coreiot_server = doc["server"] | "";
+            coreiot_port = doc["port"] | 1883;
+            coreiot_client_id = doc["client_id"] | "";
+            coreiot_username = doc["username"] | "";
+            String pwd = doc["password"] | "";
+            if (pwd != "***" && pwd != "") coreiot_password = pwd;
+            
+            saveCoreIOTConfig();
+            req->send(200, "application/json", "{\"success\":true}");
+        });
+
+    // GET status
+    dashboardServer.on("/api/coreiot/status", HTTP_GET, [](AsyncWebServerRequest *req){
+        StaticJsonDocument<256> doc;
+        doc["mqtt_connected"] = isMQTTConnected();
+        doc["wifi_connected"] = WiFi.isConnected();
+        doc["wifi_ip"] = WiFi.localIP().toString();
+        
+        String res;
+        serializeJson(doc, res);
+        req->send(200, "application/json", res);
+    });
+}
+
+// ==================== START DASHBOARD SERVER ====================
+void connnectWSV() {
+    // ✅ Only start if WiFi STA is connected
+    if (!WiFi.isConnected()) {
+        Serial.println("⚠️ Dashboard server waiting for WiFi STA...");
+        return;
+    }
+    
+    Serial.println("🚀 Starting Dashboard Server (port 8080)...");
+    
+    ws.onEvent(onEvent);
+    dashboardServer.addHandler(&ws);
+
+    // ✅ Dashboard pages
+    dashboardServer.on("/", HTTP_GET, [](AsyncWebServerRequest *req){
+        req->send(LittleFS, "/index.html", "text/html");
+    });
+    dashboardServer.on("/script.js", HTTP_GET, [](AsyncWebServerRequest *req){
+        req->send(LittleFS, "/script.js", "application/javascript");
+    });
+    dashboardServer.on("/styles.css", HTTP_GET, [](AsyncWebServerRequest *req){
+        req->send(LittleFS, "/styles.css", "text/css");
+    });
+
+    // ✅ LED CONTROL (Port 8080) - Using shared function from mainserver.cpp
+    dashboardServer.on("/control", HTTP_GET, [](AsyncWebServerRequest *req){
+        int device = req->hasParam("device") ? req->getParam("device")->value().toInt() : 0;
+        String state = req->hasParam("state") ? req->getParam("state")->value() : "";
+        int brightness = req->hasParam("brightness") ? req->getParam("brightness")->value().toInt() : 0;
+
+        Serial.println("\n======== LED CONTROL (Port 8080) ========");
+        Serial.printf("Device:%d State:%s Bright:%d%%\n", device, state.c_str(), brightness);
+
+        int httpCode = 200;
+        String body = processLedControl(device, state, brightness, httpCode);
+        
+        req->send(httpCode, httpCode == 200 ? "application/json" : "text/plain", body);
+        Serial.println("=========================================\n");
+    });
+
+    // ✅ Sensor endpoint
+    dashboardServer.on("/sensor", HTTP_GET, [](AsyncWebServerRequest *req){
+        StaticJsonDocument<128> doc;
+        if (isnan(glob_temperature) || glob_temperature == -1) {
+            doc["error"] = true;
+            doc["temperature"] = 0;
+            doc["humidity"] = 0;
+        } else {
+            doc["error"] = false;
+            doc["temperature"] = glob_temperature;
+            doc["humidity"] = glob_humidity;
+        }
+        
+        String json;
+        serializeJson(doc, json);
+        req->send(200, "application/json", json);
+    });
+
+    dashboardServer.on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest *req){
+        req->send(204);
+    });
+
+    setupCoreIOTAPI();
+
+    dashboardServer.onNotFound([](AsyncWebServerRequest *req){
+        Serial.println("404 (Port 8080): " + req->url());
+        req->send(404, "text/plain", "Not Found");
+    });
+
+    dashboardServer.begin();
+    ElegantOTA.begin(&dashboardServer);
+    webserver_isrunning = true;
+
+    Serial.println("✅ Dashboard: http://" + WiFi.localIP().toString() + ":8080");
+}
+
+// ==================== STOP DASHBOARD ====================
+void Webserver_stop() {
+    if (webserver_isrunning) {
+        ws.closeAll();
+        dashboardServer.end();
+        webserver_isrunning = false;
+        Serial.println("🛑 Dashboard server stopped");
+    }
+}
+
+// ==================== AUTO RECONNECT ====================
+void Webserver_reconnect() {
+    // ✅ Auto-start when WiFi STA connects
+    if (!webserver_isrunning && WiFi.isConnected()) {
+        connnectWSV();
+    }
+    
+    if (webserver_isrunning) {
+        ElegantOTA.loop();
+    }
+}
