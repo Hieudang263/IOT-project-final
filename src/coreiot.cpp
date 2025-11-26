@@ -55,9 +55,9 @@ bool mqttReconnect() {
     client.setServer(coreiot_server.c_str(), coreiot_port);
     client.setCallback(mqttCallback);
 
-    // ✅ Topics based on username
+    // ✅ Topic for ThingsBoard-style telemetry
     topicCommand = coreiot_username + "/commands";
-    topicTelemetry = coreiot_username + "/telemetry";
+    topicTelemetry = "v1/devices/me/telemetry";
 
     Serial.println("📋 MQTT Credentials:");
     Serial.println("   Client ID: " + coreiot_client_id);

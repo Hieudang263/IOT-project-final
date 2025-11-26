@@ -173,35 +173,33 @@ void handleScan() {
 }
 
 void handleConnect() {
-  Serial.println("\n======== WIFI CONNECT ========");
-  
-  wifi_ssid = server.arg("ssid");
-  wifi_password = server.arg("pass");
-  
-  Serial.println("SSID: " + wifi_ssid);
-  
-  if (wifi_ssid.isEmpty()) {
-    server.send(400, "text/plain", "SSID required");
-    return;
-  }
-  
-  WIFI_SSID = wifi_ssid;
-  WIFI_PASS = wifi_password;
-  
-  server.send(200, "text/plain", "Connecting to: " + wifi_ssid);
-  delay(100);
-
-  // Save without reboot so we can try to connect immediately
-  Save_info_File(WIFI_SSID, WIFI_PASS, "", "", "", false);
-
-  // Try STA right away; stop AP if connected
-  bool connected = startSTA(true);
-  if (connected) {
-    Serial.println("✅ Port80: STA connected, AP stopped");
-  } else {
-    Serial.println("⚠️ Port80: STA connect failed, keep AP for retry");
-  }
-  Serial.println("==============================\n");
+    Serial.println("\n======== WIFI CONNECT ========");
+    
+    wifi_ssid = server.arg("ssid");
+    wifi_password = server.arg("pass");
+    
+    Serial.println("SSID: " + wifi_ssid);
+    
+    if (wifi_ssid.isEmpty()) {
+        server.send(400, "text/plain", "SSID required");
+        return;
+    }
+    
+    WIFI_SSID = wifi_ssid;
+    WIFI_PASS = wifi_password;
+    
+    server.send(200, "text/plain", "Connecting to: " + wifi_ssid);
+    delay(100);
+    
+    // ✅ TẮT AP SAU KHI LƯU CẤU HÌNH
+    if (isAPMode) {
+        Serial.println("🛑 Disabling AP mode after WiFi config...");
+        WiFi.softAPdisconnect(true);
+        isAPMode = false;
+    }
+    
+    Save_info_File(WIFI_SSID, WIFI_PASS, "", "", "");
+    Serial.println("==============================\n");
 }
 
 void handleAPConfig() {
@@ -276,34 +274,46 @@ void startAP() {
 
 // ==================== MAIN SERVER TASK ====================
 void main_server_task(void *pvParameters) {
-  Serial.println("\n📡 Main Server Task Starting (Port 80)...");
-  
-  vTaskDelay(500 / portTICK_PERIOD_MS);
-  
-  setupPWM();
-  startAP();
-  
-  server.on("/", HTTP_GET, handleRoot);
-  server.on("/control", HTTP_GET, handleControl);
-  server.on("/scan", HTTP_GET, handleScan);
-  server.on("/connect", HTTP_GET, handleConnect);
-  server.on("/apconfig", HTTP_GET, handleAPConfig);
-  server.on("/sensor", HTTP_GET, handleSensor);
-  
-  server.on("/script.js", HTTP_GET, []() { handleStatic("/script.js", "application/javascript"); });
-  server.on("/styles.css", HTTP_GET, []() { handleStatic("/styles.css", "text/css"); });
-  
-  server.onNotFound([]() {
-    Serial.println("404: " + server.uri());
-    server.send(404, "text/plain", "Not Found");
-  });
-  
-  server.begin();
-  Serial.println("✅ HTTP Server started on port 80");
-  Serial.println("🌐 Access: http://" + WiFi.softAPIP().toString());
-  
-  for (;;) {
-    server.handleClient();
-    vTaskDelay(10 / portTICK_PERIOD_MS);
-  }
+    Serial.println("\n📡 Main Server Task Starting...");
+    vTaskDelay(500 / portTICK_PERIOD_MS);
+    
+    setupPWM();
+    
+    // ✅ CHỈ BẬT AP KHI CHƯA CÓ CẤU HÌNH WIFI HOẶC KẾT NỐI THẤT BẠI
+    if (WIFI_SSID.isEmpty() || WiFi.status() != WL_CONNECTED) {
+        Serial.println("⚠️ No WiFi config or STA failed → Starting AP mode");
+        startAP();
+    } else {
+        Serial.println("✅ WiFi STA connected → AP mode DISABLED");
+    }
+    
+    // Register routes
+    server.on("/", HTTP_GET, handleRoot);
+    server.on("/control", HTTP_GET, handleControl);
+    server.on("/scan", HTTP_GET, handleScan);
+    server.on("/connect", HTTP_GET, handleConnect);
+    server.on("/apconfig", HTTP_GET, handleAPConfig);
+    server.on("/sensor", HTTP_GET, handleSensor);
+    
+    server.on("/script.js", HTTP_GET, []() { handleStatic("/script.js", "application/javascript"); });
+    server.on("/styles.css", HTTP_GET, []() { handleStatic("/styles.css", "text/css"); });
+    
+    server.onNotFound([]() {
+        Serial.println("404: " + server.uri());
+        server.send(404, "text/plain", "Not Found");
+    });
+    
+    server.begin();
+    Serial.println("✅ HTTP Server started on port 80");
+    
+    if (isAPMode) {
+        Serial.println("🌐 Access: http://" + WiFi.softAPIP().toString());
+    } else {
+        Serial.println("🌐 Access: http://" + WiFi.localIP().toString());
+    }
+    
+    for (;;) {
+        server.handleClient();
+        vTaskDelay(10 / portTICK_PERIOD_MS);
+    }
 }
