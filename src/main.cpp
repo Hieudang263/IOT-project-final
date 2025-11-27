@@ -49,7 +49,7 @@ void setup()
       Serial.println("⚠️ Creating default coreiot.json...");
       coreiot_server = "app.coreiot.io";
       coreiot_port = 1883;
-      coreiot_client_id = "ESP32_" + String((uint32_t)ESP.getEfuseMac(), HEX);
+      coreiot_client_id = "";  
       coreiot_username = "";
       coreiot_password = "";
       saveCoreIOTConfig();
