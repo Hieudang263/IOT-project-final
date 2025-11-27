@@ -39,6 +39,9 @@ function onMessage(event) {
         if (data.humi !== undefined && window.gaugeHumi) {
             window.gaugeHumi.refresh(data.humi);
         }
+        if (data.rain !== undefined && window.gaugeRain) {
+            window.gaugeRain.refresh(data.rain);
+        }
     } catch (e) {
         console.warn("⚠️ Dữ liệu nhận được không phải JSON hợp lệ:", event.data);
     }
@@ -79,7 +82,7 @@ function showSection(id, event) {
 function initGauges() {
     window.gaugeTemp = new JustGage({
         id: "gauge_temp",
-        value: 26,
+        value: 0,
         min: -10,
         max: 50,
         donut: true,
@@ -87,12 +90,15 @@ function initGauges() {
         gaugeWidthScale: 0.25,
         gaugeColor: "transparent",
         levelColorsGradient: true,
-        levelColors: ["#00BCD4", "#4CAF50", "#FFC107", "#F44336"]
+        levelColors: ["#00BCD4", "#4CAF50", "#FFC107", "#F44336"],
+        startAnimationTime: 0,        // ✅ TẮT animation lúc khởi tạo
+        startAnimationType: "linear",
+        refreshAnimationTime: 1000    // ✅ GIỮ animation 1 giây khi data update
     });
 
     window.gaugeHumi = new JustGage({
         id: "gauge_humi",
-        value: 60,
+        value: 0,
         min: 0,
         max: 100,
         donut: true,
@@ -100,7 +106,26 @@ function initGauges() {
         gaugeWidthScale: 0.25,
         gaugeColor: "transparent",
         levelColorsGradient: true,
-        levelColors: ["#42A5F5", "#00BCD4", "#0288D1"]
+        levelColors: ["#42A5F5", "#00BCD4", "#0288D1"],
+        startAnimationTime: 0,
+        startAnimationType: "linear",
+        refreshAnimationTime: 1000
+    });
+
+    window.gaugeRain = new JustGage({
+        id: "gauge_rain",
+        value: 0,
+        min: 0,
+        max: 100,
+        donut: true,
+        pointer: false,
+        gaugeWidthScale: 0.25,
+        gaugeColor: "transparent",
+        levelColorsGradient: true,
+        levelColors: ["#90CAF9", "#42A5F5", "#1E88E5", "#1565C0"],
+        startAnimationTime: 0,
+        startAnimationType: "linear",
+        refreshAnimationTime: 1000
     });
 }
 
@@ -268,6 +293,7 @@ async function pollSensors() {
 
         if (window.gaugeTemp) window.gaugeTemp.refresh(data.temperature ?? 0);
         if (window.gaugeHumi) window.gaugeHumi.refresh(data.humidity ?? 0);
+        if (window.gaugeRain) window.gaugeRain.refresh(data.rain ?? 0);
 
     } catch (err) {
         console.warn('⚠️ Lỗi tải dữ liệu cảm biến', err);

@@ -75,11 +75,18 @@ body {
   padding      : 30px;
   text-align   : center;
   width        : 300px;
-  transition   : transform 0.3s ease;
+  flex-shrink  : 0;
+  transition   : transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.gauge-card:hover {
+  box-shadow: 0 8px 20px rgba(34, 148, 242, 0.2);
+  transform : translateY(-3px);
 }
 
 #gauge_temp,
-#gauge_humi {
+#gauge_humi,
+#gauge_rain {
   width : 260px;
   height: 260px;
   margin: 0 auto;
@@ -340,5 +347,80 @@ body {
   to {
     transform: scale(1);
     opacity  : 1;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .gauges-container {
+    gap: 20px;
+  }
+
+  .gauge-card {
+    width: 280px;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    padding: 20px 30px;
+  }
+
+  .sidebar {
+    width: 200px;
+  }
+
+  .gauge-card {
+    width: 250px;
+  }
+
+  .gauges-container {
+    gap: 15px;
+    justify-content: center;
+  }
+
+  .nav-item {
+    width: 85%;
+    padding: 12px 15px;
+    font-size: 16px;
+  }
+
+  .nav-item span {
+    display: none;
+  }
+
+  .settings-card {
+    padding: 30px 20px;
+    width: 95%;
+  }
+
+  .device-card {
+    width: 200px;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content {
+    padding: 15px 20px;
+  }
+
+  .sidebar {
+    width: 150px;
+  }
+
+  .gauge-card {
+    width: 220px;
+  }
+
+  .settings-card {
+    padding: 20px 15px;
+  }
+
+  .add-relay-btn {
+    width: 60px;
+    height: 60px;
+    font-size: 24px;
+    bottom: 20px;
+    right: 20px;
   }
 }
