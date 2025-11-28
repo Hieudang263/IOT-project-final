@@ -32,12 +32,12 @@ function onMessage(event) {
     console.log("📩 Nhận:", event.data);
     try {
         var data = JSON.parse(event.data);
-        // Cập nhật gauge nếu có dữ liệu
-        if (data.temp !== undefined && window.gaugeTemp) {
-            window.gaugeTemp.refresh(data.temp);
+        // ✅ SỬA field names để match /sensor endpoint
+        if (data.temperature !== undefined && window.gaugeTemp) {
+            window.gaugeTemp.refresh(data.temperature);
         }
-        if (data.humi !== undefined && window.gaugeHumi) {
-            window.gaugeHumi.refresh(data.humi);
+        if (data.humidity !== undefined && window.gaugeHumi) {
+            window.gaugeHumi.refresh(data.humidity);
         }
         if (data.rain !== undefined && window.gaugeRain) {
             window.gaugeRain.refresh(data.rain);
@@ -82,23 +82,24 @@ function showSection(id, event) {
 function initGauges() {
     window.gaugeTemp = new JustGage({
         id: "gauge_temp",
-        value: 0,
-        min: -10,
-        max: 50,
+        value: 100, //ghi  để test animation
+        min: 0,
+        max: 100,
         donut: true,
         pointer: false,
         gaugeWidthScale: 0.25,
         gaugeColor: "transparent",
         levelColorsGradient: true,
         levelColors: ["#00BCD4", "#4CAF50", "#FFC107", "#F44336"],
-        startAnimationTime: 0,        // ✅ TẮT animation lúc khởi tạo
+        counter: false,             // ✅ TẮT COUNTER ANIMATION (số đếm)
+        startAnimationTime: 0,      // ✅ TẮT animation khi khởi tạo
         startAnimationType: "linear",
-        refreshAnimationTime: 1000    // ✅ GIỮ animation 1 giây khi data update
+        refreshAnimationTime: 1000  // ✅ GIỮ animation 1 giây khi data update
     });
 
     window.gaugeHumi = new JustGage({
         id: "gauge_humi",
-        value: 0,
+        value: 100, //ghi  để test animation
         min: 0,
         max: 100,
         donut: true,
@@ -107,14 +108,16 @@ function initGauges() {
         gaugeColor: "transparent",
         levelColorsGradient: true,
         levelColors: ["#42A5F5", "#00BCD4", "#0288D1"],
+        counter: false,             // ✅ TẮT COUNTER ANIMATION
         startAnimationTime: 0,
         startAnimationType: "linear",
         refreshAnimationTime: 1000
     });
 
+    // ✅ THÊM GAUGE MƯA
     window.gaugeRain = new JustGage({
         id: "gauge_rain",
-        value: 0,
+        value: 100, //ghi  để test animation
         min: 0,
         max: 100,
         donut: true,
@@ -122,7 +125,8 @@ function initGauges() {
         gaugeWidthScale: 0.25,
         gaugeColor: "transparent",
         levelColorsGradient: true,
-        levelColors: ["#90CAF9", "#42A5F5", "#1E88E5", "#1565C0"],
+        levelColors: ["#E3F2FD", "#64B5F6", "#1976D2", "#0D47A1"],
+        counter: false,             // ✅ TẮT COUNTER ANIMATION
         startAnimationTime: 0,
         startAnimationType: "linear",
         refreshAnimationTime: 1000
@@ -291,6 +295,7 @@ async function pollSensors() {
         const data = await res.json();
         if (data.error) return;
 
+        // ✅ CẬP NHẬT CẢ 3 GAUGE KHI POLL
         if (window.gaugeTemp) window.gaugeTemp.refresh(data.temperature ?? 0);
         if (window.gaugeHumi) window.gaugeHumi.refresh(data.humidity ?? 0);
         if (window.gaugeRain) window.gaugeRain.refresh(data.rain ?? 0);
