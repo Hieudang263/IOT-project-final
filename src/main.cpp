@@ -66,27 +66,11 @@ void setup()
   Serial.println("\n📋 Creating tasks...");
   
   // Port 80: AP Mode Configuration Server (ALWAYS ON)
-  xTaskCreatePinnedToCore(
-    main_server_task,
-    "MainServer80",
-    8192,
-    NULL,
-    2,
-    NULL,
-    1
-  );
+  xTaskCreatePinnedToCore(main_server_task,"MainServer80",8192,NULL,2,NULL,1);
   Serial.println("   ✅ MainServer (Port 80) task created (Core 1)");
   
   // MQTT Task
-  xTaskCreatePinnedToCore(
-    task_mqtt,
-    "MQTT",
-    4096,
-    NULL,
-    1,
-    NULL,
-    1
-  );
+  xTaskCreatePinnedToCore(task_mqtt,"MQTT",4096,NULL,1,NULL,1);
   Serial.println("   ✅ MQTT task created (Core 1)");
   
   // Optional tasks (uncomment if needed):
