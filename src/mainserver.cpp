@@ -224,11 +224,12 @@ void handleConnect() {
     delay(100);
     
     // ✅ TẮT AP SAU KHI LƯU CẤU HÌNH
-    if (isAPMode) {
-        Serial.println("🛑 Disabling AP mode after WiFi config...");
-        WiFi.softAPdisconnect(true);
-        isAPMode = false;
-    }
+    //if (isAPMode) {
+    //    Serial.println("🛑 Disabling AP mode after WiFi config...");
+    //    WiFi.softAPdisconnect(true);
+    //    isAPMode = false;
+     //    }
+     
     
     // ✅ LƯU VÀO JSON FILE (/info.dat) - GIỮ LẠI CÁC TRƯỜNG CŨ
     DynamicJsonDocument doc(4096);
@@ -266,7 +267,7 @@ void handleConnect() {
     Serial.println("==============================\n");
     
     // ✅ KẾT NỐI WIFI
-    startSTA(true);
+    startSTA(false);
 }
 
 void handleAPConfig() {
@@ -308,7 +309,7 @@ void handleSensor() {
   if (hasData) {
     json = "{\"error\":false,\"temperature\":" + String(th.temperature, 1) + 
            ",\"humidity\":" + String(th.humidity, 1) + 
-           ",\"rain\":" + String(water) + "}";
+           ",\"rain\":" + String(water) + "}"; // đổi thành ",\"rain\":" + String((water*100)/4095) + "}";
 
 #ifdef DEBUG
     Serial.println(json);
@@ -374,7 +375,7 @@ void main_server_task(void *pvParameters) {
         Serial.println("⚠️ No WiFi config or STA failed → Starting AP mode");
         startAP();
     } else {
-        Serial.println("✅ WiFi STA connected → AP mode DISABLED");
+        Serial.println("✅ WiFi STA connected → AP mode is still ENABLED (dual mode)");
     }
     
     // Register routes

@@ -66,7 +66,7 @@ void setup()
     // ✅ 5. Check WiFi info file
   if (check_info_File(0)) {
     // Try STA immediately if credentials exist
-    startSTA(true);
+    startSTA(false);
   }
 
   //startSTA();

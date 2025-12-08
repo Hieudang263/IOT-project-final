@@ -27,5 +27,6 @@
         "random": "cpp",
         "fstream": "cpp",
         "streambuf": "cpp"
-    }
+    },
+    "cmake.sourceDirectory": "C:/Bach Khoa/year 3/IOT/ASSIGNMENT/Kiet/IOT_PROJECT_251-RTOS_Project/lib/ArduinoJson/src"
 }
