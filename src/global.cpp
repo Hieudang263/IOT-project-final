@@ -1,4 +1,6 @@
 #include "global.h"
+float glob_temperature = 0;
+float glob_humidity = 0;
 
 QueueHandle_t TempHumidQueue = xQueueCreate(1, sizeof(TempHumid));
 
@@ -21,3 +23,5 @@ String wifi_password = "123456789";
 
 boolean isWifiConnected = false;
 SemaphoreHandle_t xBinarySemaphoreInternet = xSemaphoreCreateBinary();
+SemaphoreHandle_t xHumidityMutex = NULL;
+SemaphoreHandle_t xTempHumiSemaphore = NULL;

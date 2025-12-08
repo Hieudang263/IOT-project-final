@@ -9,6 +9,6 @@
 
 
 void temp_humi_monitor(void *pvParameters);
-extern SemaphoreHandle_t xTempHumidSemaphore;
+
 
 #endif

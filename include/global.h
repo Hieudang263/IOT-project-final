@@ -17,6 +17,9 @@ struct TempHumid{
 };
 extern bool ap_started;
 
+extern float glob_temperature;
+extern float glob_humidity;
+
 extern QueueHandle_t TempHumidQueue;
 extern QueueHandle_t waterValueQueue;
 extern QueueHandle_t fanSpeedQueue;
@@ -30,5 +33,7 @@ extern String CORE_IOT_SERVER;
 extern String CORE_IOT_PORT;
 extern boolean isWifiConnected;
 extern SemaphoreHandle_t xBinarySemaphoreInternet;
+extern SemaphoreHandle_t xTempHumiSemaphore; // Semaphore đồng bộ nhiệt độ và LED
+extern SemaphoreHandle_t xHumidityMutex; // MUTEX cho độ ẩm
 
 #endif
