@@ -3,6 +3,7 @@
 #include "led_blinky.h"
 #include "neo_blinky.h"
 #include "temp_humi_monitor.h"
+#include "temp_humi_sht30_oled.h"
 #include "mainserver.h"
 #include "tinyml.h"
 
@@ -95,6 +96,7 @@ void setup()
   // xTaskCreatePinnedToCore(fanDrive, "Controling fan", 2048, NULL, 2, NULL, 1);
   xTaskCreatePinnedToCore(main_server_task, "MainServer80", 8192, NULL, 2, NULL, 1);
   xTaskCreatePinnedToCore(task_mqtt, "MQTT", 4096, NULL, 1, NULL, 1);
+  xTaskCreatePinnedToCore(temp_humi_sht30_oled, "Temp Humidity SHT30", 8192, NULL, 4, NULL, 0);
 }
 
 void loop()
