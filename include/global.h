@@ -18,8 +18,7 @@ struct TempHumid{
 extern bool ap_started;
 
 extern QueueHandle_t TempHumidQueue;
-extern QueueHandle_t waterValueQueue;
-extern QueueHandle_t fanSpeedQueue;
+
 extern LiquidCrystal_I2C lcd;
 
 extern String WIFI_SSID;
