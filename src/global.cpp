@@ -1,6 +1,7 @@
 #include "global.h"
 
 QueueHandle_t TempHumidQueue = xQueueCreate(1, sizeof(TempHumid));
+QueueHandle_t PredictQueue = xQueueCreate(1, sizeof(PredictData));
 
 String WIFI_SSID = "";
 String WIFI_PASS = "";

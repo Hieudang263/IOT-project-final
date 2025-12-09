@@ -131,30 +131,42 @@ void connnectWSV() {
         Serial.println("=========================================\n");
     });
 
-    // Sensor endpoint (temp/humi/rain)
+    // Sensor endpoint (temp/humi + prediction)
     dashboardServer.on("/sensor", HTTP_GET, [](AsyncWebServerRequest *req) {
-        StaticJsonDocument<160> doc;
+        StaticJsonDocument<256> doc;
 
         TempHumid th;
-        int water;
+        PredictData pred;
         bool hasData = false;
+        bool hasPredictData = false;
         
-        // Peek at queue data without removing it
-        if (TempHumidQueue != NULL && waterValueQueue != NULL) {
-            hasData = (xQueuePeek(TempHumidQueue, &th, 0) == pdTRUE) && (xQueuePeek(waterValueQueue, &water, 0) == pdTRUE);
+        // Lấy dữ liệu cảm biến
+        if (TempHumidQueue != NULL) {
+            hasData = (xQueuePeek(TempHumidQueue, &th, 0) == pdTRUE);
         }
-        if (hasData) {
-            doc["error"] = false;
-            doc["temperature"] = th.temperature;
-            doc["humidity"] = th.humidity;
-            doc["rain"] = water;
+        
+        // Lấy dữ liệu dự đoán
+        if (PredictQueue != NULL) {
+            hasPredictData = (xQueuePeek(PredictQueue, &pred, 0) == pdTRUE);
+        }
+        
+        doc["error"] = false;
+        
+        // ✅ Luôn trả về giá trị (0 nếu không có sensor để test animation)
+        doc["temperature"] = hasData ? th.temperature : 0;
+        doc["humidity"] = hasData ? th.humidity : 0;
+        
+        // ✅ Dữ liệu dự đoán
+        if (hasPredictData && pred.has_data) {
+            doc["predicted_temp"] = pred.predicted_temp;
+            doc["predicted_humi"] = pred.predicted_humi;
+            doc["accuracy"] = pred.accuracy;
         } else {
-            // No data available in queue
-            doc["error"] = true;
-            doc["temperature"] = 0;
-            doc["humidity"] = 0;
-            doc["rain"] = 0;
+            doc["predicted_temp"] = 0;  // Trả về 0 thay vì null để test animation
+            doc["predicted_humi"] = 0;
+            doc["accuracy"] = 0;
         }
+        
         String json;
         serializeJson(doc, json);
         req->send(200, "application/json", json);

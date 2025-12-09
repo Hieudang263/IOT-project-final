@@ -35,24 +35,42 @@
     <!-- TRANG CHỦ -->
     <div id="home" class="section fade-in">
       <header>
-        <h1>Bảng điều khiển môi trường</h1>
-        <p>Giám sát nhiệt độ và độ ẩm theo thời gian thực</p>
+        <h1>Bảng điều khiển môi trường & TinyML</h1>
+        <p>Giám sát nhiệt độ, độ ẩm và dự báo từ TinyML theo thời gian thực</p>
       </header>
 
       <div class="gauges-container">
+        <!-- Nhiệt độ hiện tại -->
         <div class="gauge-card">
-          <h2>🌡️ Nhiệt độ (°C)</h2>
+          <h2>🌡️ Nhiệt độ hiện tại (°C)</h2>
           <div id="gauge_temp"></div>
         </div>
 
+        <!-- Độ ẩm hiện tại -->
         <div class="gauge-card">
-          <h2>💧 Độ ẩm (%)</h2>
+          <h2>💧 Độ ẩm hiện tại (%)</h2>
           <div id="gauge_humi"></div>
         </div>
 
-        <div class="gauge-card">
-          <h2>🌧️ Lưu lượng mưa (%)</h2>
-          <div id="gauge_rain"></div>
+        <!-- Dự báo nhiệt độ -->
+        <div class="gauge-card prediction">
+          <h2>🔮 Dự báo nhiệt độ (°C)</h2>
+          <div id="gauge_predict_temp"></div>
+          <p class="prediction-note">Dự đoán từ TinyML</p>
+        </div>
+
+        <!-- Dự báo độ ẩm -->
+        <div class="gauge-card prediction">
+          <h2>🌊 Dự báo độ ẩm (%)</h2>
+          <div id="gauge_predict_humi"></div>
+          <p class="prediction-note">Dự đoán từ TinyML</p>
+        </div>
+
+        <!-- Độ chính xác -->
+        <div class="gauge-card accuracy">
+          <h2>📈 Độ chính xác mô hình (%)</h2>
+          <div id="gauge_accuracy"></div>
+          <p class="prediction-note">Model Accuracy</p>
         </div>
       </div>
     </div>

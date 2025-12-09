@@ -18,8 +18,7 @@ struct TempHumid{
 extern bool ap_started;
 
 extern QueueHandle_t TempHumidQueue;
-extern QueueHandle_t waterValueQueue;
-extern QueueHandle_t fanSpeedQueue;
+
 extern LiquidCrystal_I2C lcd;
 
 extern String WIFI_SSID;
@@ -30,5 +29,16 @@ extern String CORE_IOT_SERVER;
 extern String CORE_IOT_PORT;
 extern boolean isWifiConnected;
 extern SemaphoreHandle_t xBinarySemaphoreInternet;
+
+// Thêm struct cho dữ liệu dự đoán
+struct PredictData {
+    float predicted_temp;
+    float predicted_humi;
+    int accuracy;
+    bool has_data;
+};
+
+// Thêm queue
+extern QueueHandle_t PredictQueue;
 
 #endif

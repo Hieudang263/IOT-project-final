@@ -14,84 +14,100 @@ void task_mqtt(void *pv) {
     }
     
     TempHumid th;
-    int water;
+    PredictData pred;
     unsigned long lastPublish = 0;
     static bool errorLogged = false;
+    static bool lastHadSensor = false;
     
     for (;;) {
-        // ✅ Changed: Use 0 timeout instead of portMAX_DELAY to avoid blocking
+        // ✅ Lấy dữ liệu cảm biến và dự đoán
         bool hasTempHumid = (TempHumidQueue != NULL && xQueuePeek(TempHumidQueue, &th, 0) == pdTRUE);
-        bool hasWater = (waterValueQueue != NULL && xQueuePeek(waterValueQueue, &water, 0) == pdTRUE);
-
-        Serial.println(hasTempHumid);
-        Serial.println(hasWater);
+        bool hasPredictData = (PredictQueue != NULL && xQueuePeek(PredictQueue, &pred, 0) == pdTRUE);
         
-        if (hasTempHumid && hasWater) {
-#ifdef DEBUG
-            Serial.println(coreiot_server);
-            Serial.println(coreiot_port);
-            Serial.println(coreiot_client_id);
-            Serial.println(coreiot_username);
-            Serial.println(WiFi.isConnected());
-#endif
-            if (WiFi.isConnected() &&
-                coreiot_server != "" &&
-                coreiot_port > 0 &&
-                coreiot_client_id != "" &&
-                coreiot_username != "") 
-            { 
-#ifdef DEBUG
-                Serial.println("BOOTING COREIOT TASK");
-#endif
-
-                coreiot_loop(); 
-                errorLogged = false;
+        // ✅ Check if we have valid CoreIOT config and WiFi
+        if (WiFi.isConnected() &&
+            coreiot_server != "" &&
+            coreiot_port > 0 &&
+            coreiot_client_id != "" &&
+            coreiot_username != "") 
+        { 
+            coreiot_loop(); 
+            errorLogged = false;
+            
+            unsigned long now = millis();
+            if (now - lastPublish >= 5000) {
+                lastPublish = now;
                 
-                unsigned long now = millis();
-                if (now - lastPublish >= 5000) {
-
-#ifdef DEBUG
-                Serial.println("PUBLISHING");
-#endif
-
-                    lastPublish = now;
-                    
-                    String json;
+                String json;
+                
+                // ✅ Có dữ liệu cảm biến: gửi đầy đủ
+                if (hasTempHumid) {
                     json = "{\"temperature\":" + String(th.temperature, 1) + 
-                           ",\"humidity\":" + String(th.humidity, 1) + 
-                           ",\"rain\":" + String((water*100)/4095) + 
-                           ",\"status\":\"sensor_active\"}";
+                           ",\"humidity\":" + String(th.humidity, 1);
                     
-                    Serial.println("\n✅ Publishing REAL sensor data:");
-                    Serial.println("   Temperature: " + String(th.temperature) + "°C");
-                    Serial.println("   Humidity   : " + String(th.humidity, 1) + "%");
-                    Serial.println("   Rain (ADC%): " + String((water*100)/4095) + "%");
-                    Serial.println("   JSON: " + json);
-                    
-                    publishData(json);
-                }
-            } 
-            else 
-            {
-                if (!errorLogged) {
-                    if (coreiot_server == "" || 
-                        coreiot_port == 0 || 
-                        coreiot_client_id == "" || 
-                        coreiot_username == "") 
-                    {
-                        Serial.println("⚠️ CoreIOT config missing, please fill in Settings");
-                    } 
-                    else 
-                    {
-                        Serial.println("⚠️ WiFi disconnected, waiting to reconnect...");
+                    // Thêm dữ liệu dự đoán nếu có
+                    if (hasPredictData && pred.has_data) {
+                        json += ",\"predicted_temp\":" + String(pred.predicted_temp, 1);
+                        json += ",\"predicted_humi\":" + String(pred.predicted_humi, 1);
+                        json += ",\"accuracy\":" + String(pred.accuracy);
+                    } else {
+                        json += ",\"predicted_temp\":0";
+                        json += ",\"predicted_humi\":0";
+                        json += ",\"accuracy\":0";
                     }
-                    errorLogged = true;
+                    
+                    json += ",\"status\":\"sensor_active\"}";
+                    
+                    Serial.println("\n✅ Publishing sensor data + TinyML prediction:");
+                    Serial.println("   Temperature    : " + String(th.temperature, 1) + "°C");
+                    Serial.println("   Humidity       : " + String(th.humidity, 1) + "%");
+                    
+                    if (hasPredictData && pred.has_data) {
+                        Serial.println("   Predicted Temp : " + String(pred.predicted_temp, 1) + "°C");
+                        Serial.println("   Predicted Humi : " + String(pred.predicted_humi, 1) + "%");
+                        Serial.println("   Accuracy       : " + String(pred.accuracy) + "%");
+                    } else {
+                        Serial.println("   Prediction     : Not available yet");
+                    }
+                    
+                    lastHadSensor = true;
+                } 
+                // ✅ Không có dữ liệu cảm biến: gửi 0
+                else {
+                    json = "{\"temperature\":0"
+                           ",\"humidity\":0"
+                           ",\"predicted_temp\":0"
+                           ",\"predicted_humi\":0"
+                           ",\"accuracy\":0"
+                           ",\"status\":\"no_sensor\"}";
+                    
+                    Serial.println("\n⚠️ Publishing NO SENSOR status:");
+                    Serial.println("   All values set to 0");
+                    
+                    if (lastHadSensor) {
+                        Serial.println("   ⚠️ Sensor disconnected!");
+                        lastHadSensor = false;
+                    }
                 }
+                
+                Serial.println("   JSON: " + json);
+                publishData(json);
             }
-        } else {
-            // ✅ Added: Handle case when sensor data not yet available
+        } 
+        else 
+        {
             if (!errorLogged) {
-                Serial.println("⏳ Waiting for sensor data...");
+                if (coreiot_server == "" || 
+                    coreiot_port == 0 || 
+                    coreiot_client_id == "" || 
+                    coreiot_username == "") 
+                {
+                    Serial.println("⚠️ CoreIOT config missing, please fill in Settings");
+                } 
+                else 
+                {
+                    Serial.println("⚠️ WiFi disconnected, waiting to reconnect...");
+                }
                 errorLogged = true;
             }
         }

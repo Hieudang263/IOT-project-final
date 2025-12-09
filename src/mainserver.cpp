@@ -292,37 +292,53 @@ void handleAPConfig() {
 }
 
 void handleSensor() {
-  String json;
   TempHumid th;
-  int water;
+  PredictData pred;
   bool hasData = false;
+  bool hasPredictData = false;
   
-  // Peek at queue data without removing it
-  if (TempHumidQueue != NULL && waterValueQueue != NULL) {
-    hasData = (xQueuePeek(TempHumidQueue, &th, 0) == pdTRUE) && (xQueuePeek(waterValueQueue, &water, 0) == pdTRUE);
-
-  #ifdef DEBUG
-    Serial.println("HAS DATA NOW");
-  #endif
+  // Lấy dữ liệu cảm biến
+  if (TempHumidQueue != NULL) {
+    hasData = (xQueuePeek(TempHumidQueue, &th, 0) == pdTRUE);
   }
+  
+  // Lấy dữ liệu dự đoán
+  if (PredictQueue != NULL) {
+    hasPredictData = (xQueuePeek(PredictQueue, &pred, 0) == pdTRUE);
+  }
+
+  // ✅ Lấy IP AP và STA
+  String apIp  = WiFi.softAPIP().toString();
+  String staIp = WiFi.isConnected() ? WiFi.localIP().toString() : "";
+
+  String json = "{";
   
   if (hasData) {
-    json = "{\"error\":false,\"temperature\":" + String(th.temperature, 1) + 
-           ",\"humidity\":" + String(th.humidity, 1) + 
-           ",\"rain\":" + String(water) + "}"; // đổi thành ",\"rain\":" + String((water*100)/4095) + "}";
-
-#ifdef DEBUG
-    Serial.println(json);
-#endif 
+    json += "\"error\":false,";
+    json += "\"temperature\":" + String(th.temperature, 1) + ",";
+    json += "\"humidity\":" + String(th.humidity, 1) + ",";
   } else {
-    // No data available in queue yet
-    json = "{\"error\":true,\"temperature\":0,\"humidity\":0,\"rain\":0}";
-
-#ifdef DEBUG
-    Serial.println("NO DATA HAS BEEN RECEIVED YET");
-#endif
+    json += "\"error\":true,";
+    json += "\"temperature\":0,";
+    json += "\"humidity\":0,";
   }
   
+  // Thêm dữ liệu dự đoán
+  if (hasPredictData && pred.has_data) {
+    json += "\"predicted_temp\":" + String(pred.predicted_temp, 1) + ",";
+    json += "\"predicted_humi\":" + String(pred.predicted_humi, 1) + ",";
+    json += "\"accuracy\":" + String(pred.accuracy) + ",";
+  } else {
+    json += "\"predicted_temp\":null,";
+    json += "\"predicted_humi\":null,";
+    json += "\"accuracy\":null,";
+  }
+  
+  // ✅ Thêm IP AP và STA
+  json += "\"ap_ip\":\"" + apIp + "\",";
+  json += "\"sta_ip\":\"" + staIp + "\"";
+  json += "}";
+
   server.send(200, "application/json", json);
 }
 void handleStatic(String path, String type) {
