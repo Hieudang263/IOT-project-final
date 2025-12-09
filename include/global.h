@@ -7,7 +7,7 @@
 #include "freertos/semphr.h"
 #include "LiquidCrystal_I2C.h"
 
-#define LED_GPIO 48
+#define LED_GPIO 2
 #define SENSOR_PIN 4
 // #define DEBUG 1
 

@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #include "LiquidCrystal_I2C.h"
 #include "DHT20.h"
-#include "DHT.h" //for DHT11 uses
+//#include "DHT.h" //for DHT11 uses
 #include "global.h"
 #include "printLCD.h"
 

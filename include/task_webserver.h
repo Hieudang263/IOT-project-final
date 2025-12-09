@@ -1,5 +1,6 @@
 #ifndef TASK_WEBSERVER_H
 #define TASK_WEBSERVER_H
+//#define ELEGANTOTA_USE_ASYNC_WEBSERVER 1
 
 #include <ESPAsyncWebServer.h>
 #include "LittleFS.h"
