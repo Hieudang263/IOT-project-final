@@ -356,6 +356,29 @@ body {
   }
 }
 
+/* Prediction Cards */
+.gauge-card.prediction {
+  background: linear-gradient(135deg, #ffecd2, #fcb69f);
+  border: 2px solid #ff9966;
+}
+
+.gauge-card.accuracy {
+  background: linear-gradient(135deg, #a8edea, #fed6e3);
+  border: 2px solid #96e6a1;
+}
+
+.prediction-note {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #666;
+  font-style: italic;
+}
+
+.gauge-card.prediction:hover,
+.gauge-card.accuracy:hover {
+  box-shadow: 0 10px 25px rgba(255, 153, 102, 0.3);
+}
+
 /* Responsive Design */
 @media (max-width: 1200px) {
   .gauges-container {

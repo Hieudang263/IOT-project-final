@@ -1,6 +1,7 @@
 #include <DHT.h>
 #include <TensorFlowLite_ESP32.h>
 #include "model.h"
+#include "global.h"
 
 #include "tensorflow/lite/micro/all_ops_resolver.h"
 #include "tensorflow/lite/micro/micro_error_reporter.h"
@@ -16,7 +17,7 @@ tflite::MicroErrorReporter micro_error_reporter;
 tflite::ErrorReporter* error_reporter = &micro_error_reporter;
 tflite::AllOpsResolver resolver;
 
-const tflite::Model* model = nullptr;
+const tflite::Model* tflite_model = nullptr;
 tflite::MicroInterpreter* interpreter;
 
 constexpr int kTensorArenaSize = 40 * 1024;
@@ -28,24 +29,37 @@ float ring_hum[3];
 int ring_index = 0;
 bool buffer_full = false;
 
-void setup() {
+// Thêm extern để truy cập queue
+extern QueueHandle_t PredictQueue;
+
+void tinyml_setup() {
   Serial.begin(115200);
   dht.begin();
-
-  model = tflite::GetModel(g_model);
-  interpreter = new tflite::MicroInterpreter(model, resolver, tensor_arena,
+  tflite_model = tflite::GetModel(g_model);
+  interpreter = new tflite::MicroInterpreter(tflite_model, resolver, tensor_arena,
                                              kTensorArenaSize, error_reporter);
   interpreter->AllocateTensors();
 }
 
-void loop() {
+void tinyml_loop() {
   // ---- 1) Đọc DHT ----
   float t = dht.readTemperature();
   float h = dht.readHumidity();
 
-  // Nếu lỗi cảm biến → bỏ qua vòng
+  // Nếu lỗi cảm biến → gửi giá trị 0
   if (isnan(t) || isnan(h)) {
-    Serial.println("NaN,NaN,,,,");
+    Serial.println("{\"current_temp\": 0, \"current_humi\": 0, \"predicted_temp\": null, \"predicted_humi\": null, \"accuracy\": null}");
+    
+    PredictData predictData;
+    predictData.has_data = false;
+    predictData.predicted_temp = 0;
+    predictData.predicted_humi = 0;
+    predictData.accuracy = 0;
+    
+    if (PredictQueue != NULL) {
+        xQueueOverwrite(PredictQueue, &predictData);
+    }
+    
     delay(1000);
     return;
   }
@@ -91,25 +105,47 @@ void loop() {
     if (acc > 100) acc = 100;
   }
 
-// ---- 5) Xuất UART dạng JSON ----
-Serial.print("{\"current_temp\": ");
-Serial.print(t, 2);
-Serial.print(", \"current_humi\": ");
-Serial.print(h, 2);
+  // ---- 5) Xuất UART và đẩy vào queue ----
+  Serial.print("{\"current_temp\": ");
+  Serial.print(t, 2);
+  Serial.print(", \"current_humi\": ");
+  Serial.print(h, 2);
 
-if (!buffer_full) {
-    // Chưa đủ 3 mẫu → không có dự đoán
-    Serial.println(", \"predicted_temp\": null, \"predicted_humi\": null, \"accuracy\": null}");
-} else {
-    Serial.print(", \"predicted_temp\": ");
-    Serial.print(pred_t, 2);
-    Serial.print(", \"predicted_humi\": ");
-    Serial.print(pred_h, 2);
-    Serial.print(", \"accuracy\": ");
-    Serial.print((int)acc);
-    Serial.println("}");
-}
+  PredictData predictData;
+  predictData.has_data = false;
 
+  if (!buffer_full) {
+      Serial.println(", \"predicted_temp\": null, \"predicted_humi\": null, \"accuracy\": null}");
+  } else {
+      Serial.print(", \"predicted_temp\": ");
+      Serial.print(pred_t, 2);
+      Serial.print(", \"predicted_humi\": ");
+      Serial.print(pred_h, 2);
+      Serial.print(", \"accuracy\": ");
+      Serial.print((int)acc);
+      Serial.println("}");
+      
+      // Đẩy vào queue để webserver lấy
+      predictData.predicted_temp = pred_t;
+      predictData.predicted_humi = pred_h;
+      predictData.accuracy = (int)acc;
+      predictData.has_data = true;
+  }
+
+  // Gửi vào queue (overwrite nếu đầy)
+  if (PredictQueue != NULL) {
+      xQueueOverwrite(PredictQueue, &predictData);
+  }
 
   delay(1000);
+}
+
+// ==================== FREERTOS TASK WRAPPER ====================
+void tiny_ml_task(void *param) {
+    tinyml_setup();
+    
+    for (;;) {
+        tinyml_loop();
+        vTaskDelay(10 / portTICK_PERIOD_MS);
+    }
 }

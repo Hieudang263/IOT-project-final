@@ -89,7 +89,7 @@ void setup()
   // xTaskCreatePinnedToCore(printTH, "Print Temp and Humidity", 2048, NULL, 1, NULL, 1);
   // xTaskCreatePinnedToCore(printCondition, "Print Condition", 2048, NULL, 1, NULL, 1);
   // xTaskCreatePinnedToCore(main_server_task, "Task Main Server" ,8192  ,NULL  ,3 , NULL, 0);
-  // xTaskCreatePinnedToCore(tiny_ml_task, "Tiny ML Task" ,2048  ,NULL  ,3 , NULL, 0);
+   xTaskCreatePinnedToCore(tiny_ml_task, "Tiny ML Task" ,2048  ,NULL  ,3 , NULL, 0);
   // xTaskCreatePinnedToCore(coreiot_task, "CoreIOT Task" ,8192  ,NULL  ,2 , NULL, 0);
   // xTaskCreatePinnedToCore(Task_Toogle_BOOT, "Task_Toogle_BOOT", 4096, NULL, 1, NULL, 0);
   // xTaskCreatePinnedToCore(fanDrive, "Controling fan", 2048, NULL, 2, NULL, 1);

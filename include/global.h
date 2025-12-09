@@ -31,4 +31,15 @@ extern String CORE_IOT_PORT;
 extern boolean isWifiConnected;
 extern SemaphoreHandle_t xBinarySemaphoreInternet;
 
+// Thêm struct cho dữ liệu dự đoán
+struct PredictData {
+    float predicted_temp;
+    float predicted_humi;
+    int accuracy;
+    bool has_data;
+};
+
+// Thêm queue
+extern QueueHandle_t PredictQueue;
+
 #endif

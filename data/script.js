@@ -32,15 +32,24 @@ function onMessage(event) {
     console.log("📩 Nhận:", event.data);
     try {
         var data = JSON.parse(event.data);
-        // ✅ SỬA field names để match /sensor endpoint
+        
+        // Cập nhật dữ liệu hiện tại
         if (data.temperature !== undefined && window.gaugeTemp) {
             window.gaugeTemp.refresh(data.temperature);
         }
         if (data.humidity !== undefined && window.gaugeHumi) {
             window.gaugeHumi.refresh(data.humidity);
         }
-        if (data.rain !== undefined && window.gaugeRain) {
-            window.gaugeRain.refresh(data.rain);
+        
+        // Cập nhật dữ liệu dự đoán
+        if (data.predicted_temp !== undefined && data.predicted_temp !== null && window.gaugePredictTemp) {
+            window.gaugePredictTemp.refresh(data.predicted_temp);
+        }
+        if (data.predicted_humi !== undefined && data.predicted_humi !== null && window.gaugePredictHumi) {
+            window.gaugePredictHumi.refresh(data.predicted_humi);
+        }
+        if (data.accuracy !== undefined && data.accuracy !== null && window.gaugeAccuracy) {
+            window.gaugeAccuracy.refresh(data.accuracy);
         }
     } catch (e) {
         console.warn("⚠️ Dữ liệu nhận được không phải JSON hợp lệ:", event.data);
@@ -80,9 +89,10 @@ function showSection(id, event) {
 
 // ==================== HOME GAUGES ====================
 function initGauges() {
+    // Nhiệt độ hiện tại
     window.gaugeTemp = new JustGage({
         id: "gauge_temp",
-        value: 0, //ghi  để test animation
+        value: 100,
         min: 0,
         max: 100,
         donut: true,
@@ -91,15 +101,16 @@ function initGauges() {
         gaugeColor: "transparent",
         levelColorsGradient: true,
         levelColors: ["#00BCD4", "#4CAF50", "#FFC107", "#F44336"],
-        counter: false,             // ✅ TẮT COUNTER ANIMATION (số đếm)
-        startAnimationTime: 0,      // ✅ TẮT animation khi khởi tạo
+        counter: false,
+        startAnimationTime: 0,
         startAnimationType: "linear",
-        refreshAnimationTime: 1000  // ✅ GIỮ animation 1 giây khi data update
+        refreshAnimationTime: 1000
     });
 
+    // Độ ẩm hiện tại
     window.gaugeHumi = new JustGage({
         id: "gauge_humi",
-        value: 0, //ghi  để test animation
+        value: 100,
         min: 0,
         max: 100,
         donut: true,
@@ -108,16 +119,16 @@ function initGauges() {
         gaugeColor: "transparent",
         levelColorsGradient: true,
         levelColors: ["#42A5F5", "#00BCD4", "#0288D1"],
-        counter: false,             // ✅ TẮT COUNTER ANIMATION
+        counter: false,
         startAnimationTime: 0,
         startAnimationType: "linear",
         refreshAnimationTime: 1000
     });
 
-    // ✅ THÊM GAUGE MƯA
-    window.gaugeRain = new JustGage({
-        id: "gauge_rain",
-        value: 0, //ghi  để test animation
+    // Dự báo nhiệt độ
+    window.gaugePredictTemp = new JustGage({
+        id: "gauge_predict_temp",
+        value: 100,
         min: 0,
         max: 100,
         donut: true,
@@ -125,8 +136,44 @@ function initGauges() {
         gaugeWidthScale: 0.25,
         gaugeColor: "transparent",
         levelColorsGradient: true,
-        levelColors: ["#E3F2FD", "#64B5F6", "#1976D2", "#0D47A1"],
-        counter: false,             // ✅ TẮT COUNTER ANIMATION
+        levelColors: ["#FA709A", "#FEE140", "#FF9A9E"],
+        counter: false,
+        startAnimationTime: 0,
+        startAnimationType: "linear",
+        refreshAnimationTime: 1000
+    });
+
+    // Dự báo độ ẩm
+    window.gaugePredictHumi = new JustGage({
+        id: "gauge_predict_humi",
+        value: 100,
+        min: 0,
+        max: 100,
+        donut: true,
+        pointer: false,
+        gaugeWidthScale: 0.25,
+        gaugeColor: "transparent",
+        levelColorsGradient: true,
+        levelColors: ["#30CFD0", "#330867", "#A8EDEA"],
+        counter: false,
+        startAnimationTime: 0,
+        startAnimationType: "linear",
+        refreshAnimationTime: 1000
+    });
+
+    // Độ chính xác
+    window.gaugeAccuracy = new JustGage({
+        id: "gauge_accuracy",
+        value: 100,
+        min: 0,
+        max: 100,
+        donut: true,
+        pointer: false,
+        gaugeWidthScale: 0.25,
+        gaugeColor: "transparent",
+        levelColorsGradient: true,
+        levelColors: ["#A8EDEA", "#FED6E3", "#96E6A1"],
+        counter: false,
         startAnimationTime: 0,
         startAnimationType: "linear",
         refreshAnimationTime: 1000
@@ -295,10 +342,20 @@ async function pollSensors() {
         const data = await res.json();
         if (data.error) return;
 
-        // ✅ CẬP NHẬT CẢ 3 GAUGE KHI POLL
+        // Cập nhật dữ liệu hiện tại
         if (window.gaugeTemp) window.gaugeTemp.refresh(data.temperature ?? 0);
         if (window.gaugeHumi) window.gaugeHumi.refresh(data.humidity ?? 0);
-        if (window.gaugeRain) window.gaugeRain.refresh(data.rain ?? 0);
+
+        // Cập nhật dữ liệu dự đoán (nếu có)
+        if (data.predicted_temp !== null && window.gaugePredictTemp) {
+            window.gaugePredictTemp.refresh(data.predicted_temp ?? 0);
+        }
+        if (data.predicted_humi !== null && window.gaugePredictHumi) {
+            window.gaugePredictHumi.refresh(data.predicted_humi ?? 0);
+        }
+        if (data.accuracy !== null && window.gaugeAccuracy) {
+            window.gaugeAccuracy.refresh(data.accuracy ?? 0);
+        }
 
     } catch (err) {
         console.warn('⚠️ Lỗi tải dữ liệu cảm biến', err);

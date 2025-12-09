@@ -127,6 +127,7 @@
 
     input[type="range"] {
       -webkit-appearance: none;
+      appearance: none;
       width: 100%; height: 6px;
       border-radius: 5px;
       background: #ddd;
@@ -429,39 +430,69 @@
     <div id="sensor" class="content-section">
       <div class="card">
 
-        <h2>🌡️ Sensor Monitor</h2>
-        <p>Dữ liệu từ cảm biến DHT20</p>
+        <h2><span>📊</span> Cảm biến và Dự báo TinyML</h2>
+        <p>Dữ liệu cảm biến thời gian thực và dự đoán từ TinyML</p>
 
         <div class="sensor-grid">
-          <div class="sensor-item">
+          <!-- Nhiệt độ hiện tại -->
+          <div class="sensor-item" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white;">
             <div class="sensor-icon">🌡️</div>
-            <div class="sensor-label">Nhiệt độ</div>
-            <div class="sensor-value" id="tempValue">--</div>
-            <div class="sensor-unit">°C</div>
-            <div class="sensor-status" id="tempStatus">Đang đọc...</div>
+            <div class="sensor-label">Nhiệt độ hiện tại</div>
+            <div class="sensor-value">
+              <span id="tempValue">--</span>
+              <span class="sensor-unit">°C</span>
+            </div>
+            <div class="sensor-status" id="tempStatus">Chưa có dữ liệu</div>
           </div>
 
-          <div class="sensor-item">
+          <!-- Độ ẩm hiện tại -->
+          <div class="sensor-item" style="background: linear-gradient(135deg, #43e97b, #38f9d7); color: white;">
             <div class="sensor-icon">💧</div>
-            <div class="sensor-label">Độ ẩm</div>
-            <div class="sensor-value" id="humiValue">--</div>
-            <div class="sensor-unit">%</div>
-            <div class="sensor-status" id="humiStatus">Đang đọc...</div>
+            <div class="sensor-label">Độ ẩm hiện tại</div>
+            <div class="sensor-value">
+              <span id="humiValue">--</span>
+              <span class="sensor-unit">%</span>
+            </div>
+            <div class="sensor-status" id="humiStatus">Chưa có dữ liệu</div>
           </div>
 
-          <div class="sensor-item">
-            <div class="sensor-icon">🌧️</div>
-            <div class="sensor-label">Lưu lượng mưa (ADC)</div>
-            <div class="sensor-value" id="rainValue">--</div>
-            <div class="sensor-unit">%</div>
-            <div class="sensor-status" id="rainStatus">Đang đọc...</div>
+          <!-- Dự báo nhiệt độ -->
+          <div class="sensor-item" style="background: linear-gradient(135deg, #fa709a, #fee140); color: white;">
+            <div class="sensor-icon">🔮</div>
+            <div class="sensor-label">Dự báo nhiệt độ (TinyML)</div>
+            <div class="sensor-value">
+              <span id="predictTempValue">--</span>
+              <span class="sensor-unit">°C</span>
+            </div>
+            <div class="sensor-status" id="predictTempStatus">Chưa có dữ liệu</div>
+          </div>
+
+          <!-- Dự báo độ ẩm -->
+          <div class="sensor-item" style="background: linear-gradient(135deg, #30cfd0, #330867); color: white;">
+            <div class="sensor-icon">🌊</div>
+            <div class="sensor-label">Dự báo độ ẩm (TinyML)</div>
+            <div class="sensor-value">
+              <span id="predictHumiValue">--</span>
+              <span class="sensor-unit">%</span>
+            </div>
+            <div class="sensor-status" id="predictHumiStatus">Chưa có dữ liệu</div>
+          </div>
+
+          <!-- Độ chính xác -->
+          <div class="sensor-item" style="background: linear-gradient(135deg, #a8edea, #fed6e3); color: #333;">
+            <div class="sensor-icon">📈</div>
+            <div class="sensor-label">Độ chính xác mô hình</div>
+            <div class="sensor-value">
+              <span id="accuracyValue">--</span>
+              <span class="sensor-unit">%</span>
+            </div>
+            <div class="sensor-status" id="accuracyStatus">Chưa có dữ liệu</div>
           </div>
         </div>
 
-        <button class="btn btn-secondary btn-full" onclick="refreshSensor()" style="margin-top: 20px;">
+        <button class="btn btn-primary btn-full" onclick="refreshSensor()" style="margin-top: 20px;">
           <span>🔄</span><span>Làm mới dữ liệu</span>
         </button>
-
       </div>
     </div>
 
@@ -686,16 +717,16 @@ function connectWiFi() {
   connectBtn.disabled = true;
   progress.style.display = 'block';
   hint.style.display = 'block';
-  hint.textContent = 'ESP32 đang thử kết nối... AP mode sẽ tắt nếu thành công (~15s)';
+  // ✅ Đổi text cho dual mode
+  hint.textContent = 'ESP32 đang thử kết nối tới WiFi nhà... Sau khi thành công, ESP32 sẽ chạy song song AP + STA (dual mode).';
   showAlert('wifiAlert', 'Đang kết nối WiFi...', 'info');
 
-  // ✅ THÊM: Gửi username parameter
   const url = `/connect?ssid=${encodeURIComponent(ssid)}&pass=${encodeURIComponent(password)}&user=${encodeURIComponent(username)}`;
 
   fetch(url)
     .then(response => response.text())
     .then(data => {
-      showAlert('wifiAlert', 'Yêu cầu kết nối đã gửi! ESP32 đang xử lý...', 'success');
+      showAlert('wifiAlert', 'Yêu cầu kết nối đã gửi! ESP32 đang xử lý...', 'info');
 
       let attempts = 0;
       const maxAttempts = 20;
@@ -713,13 +744,22 @@ function connectWiFi() {
         }
 
         fetch('/sensor', { signal: AbortSignal.timeout(2000) })
-          .then(r => {
-            if (r.ok) {
+          .then(r => r.json())
+          .then(data => {
+            if (data && data.sta_ip && data.sta_ip !== '') {
               clearInterval(checkConnection);
               progress.style.display = 'none';
               connectBtn.disabled = false;
-              showAlert('wifiAlert', 'Kết nối thành công! AP sẽ tắt, chuyển sang WiFi nhà.', 'success');
-              hint.textContent = 'Đã kết nối. Dùng http://<ip-thiet-bi>:8080 để truy cập.';
+              
+              // ✅ Thông báo dual mode với IP cụ thể
+              showAlert('wifiAlert', 'Kết nối WiFi thành công! ESP32 đang chạy ở chế độ AP + STA (dual mode).', 'success');
+              
+              hint.innerHTML = 
+                `Sau khi kết nối, bạn có thể:<br>` +
+                `• Tiếp tục dùng AP này để cấu hình.<br>` +
+                `• Hoặc chuyển sang WiFi nhà rồi mở dashboard tại <b>http://${data.sta_ip}:8080</b><br>` +
+                `Địa chỉ IP chính xác đã hiển thị ở thanh trạng thái bên trên.`;
+              
               checkDeviceStatus();
             }
           })
@@ -777,38 +817,59 @@ function saveAPConfig() {
 function refreshSensor() {
   document.getElementById('tempValue').textContent = '--';
   document.getElementById('humiValue').textContent = '--';
-  document.getElementById('rainValue').textContent = '--';
+  document.getElementById('predictTempValue').textContent = '--';
+  document.getElementById('predictHumiValue').textContent = '--';
+  document.getElementById('accuracyValue').textContent = '--';
   document.getElementById('tempStatus').textContent = 'Đang đọc...';
   document.getElementById('humiStatus').textContent = 'Đang đọc...';
-  document.getElementById('rainStatus').textContent = 'Đang đọc...';
+  document.getElementById('predictTempStatus').textContent = 'Đang đọc...';
+  document.getElementById('predictHumiStatus').textContent = 'Đang đọc...';
+  document.getElementById('accuracyStatus').textContent = 'Đang đọc...';
 
   fetch('/sensor')
     .then(response => response.json())
     .then(data => {
-      const time = new Date().toLocaleTimeString();
       if (data.error) {
-        document.getElementById('tempValue').textContent = 'N/A';
-        document.getElementById('humiValue').textContent = 'N/A';
-        document.getElementById('rainValue').textContent = 'N/A';
-        document.getElementById('tempStatus').textContent = '❌ Không có cảm biến';
-        document.getElementById('humiStatus').textContent = '❌ Không có cảm biến';
-        document.getElementById('rainStatus').textContent = '❌ Không có cảm biến';
+        addLog('⚠️ Không thể đọc cảm biến', 'warn');
+        document.getElementById('tempStatus').textContent = 'Lỗi đọc dữ liệu';
+        document.getElementById('humiStatus').textContent = 'Lỗi đọc dữ liệu';
+        document.getElementById('predictTempStatus').textContent = 'Không có dữ liệu';
+        document.getElementById('predictHumiStatus').textContent = 'Không có dữ liệu';
+        document.getElementById('accuracyStatus').textContent = 'Không có dữ liệu';
       } else {
+        // Hiển thị dữ liệu hiện tại
         document.getElementById('tempValue').textContent = data.temperature.toFixed(1);
         document.getElementById('humiValue').textContent = data.humidity.toFixed(1);
-        document.getElementById('rainValue').textContent = (data.rain ?? 0).toFixed(1);
-        document.getElementById('tempStatus').textContent = `✔️ ${time}`;
-        document.getElementById('humiStatus').textContent = `✔️ ${time}`;
-        document.getElementById('rainStatus').textContent = `✔️ ${time}`;
+        document.getElementById('tempStatus').textContent = `Cập nhật: ${new Date().toLocaleTimeString()}`;
+        document.getElementById('humiStatus').textContent = `Cập nhật: ${new Date().toLocaleTimeString()}`;
+        
+        // Hiển thị dữ liệu dự đoán
+        if (data.predicted_temp !== null && data.predicted_humi !== null) {
+          document.getElementById('predictTempValue').textContent = data.predicted_temp.toFixed(1);
+          document.getElementById('predictHumiValue').textContent = data.predicted_humi.toFixed(1);
+          document.getElementById('accuracyValue').textContent = data.accuracy;
+          document.getElementById('predictTempStatus').textContent = `Dự đoán: ${new Date().toLocaleTimeString()}`;
+          document.getElementById('predictHumiStatus').textContent = `Dự đoán: ${new Date().toLocaleTimeString()}`;
+          document.getElementById('accuracyStatus').textContent = `Model accuracy`;
+          addLog(`✅ Dữ liệu: T=${data.temperature.toFixed(1)}°C, H=${data.humidity.toFixed(1)}%, Dự đoán: T=${data.predicted_temp.toFixed(1)}°C, H=${data.predicted_humi.toFixed(1)}%, Acc=${data.accuracy}%`);
+        } else {
+          document.getElementById('predictTempValue').textContent = '--';
+          document.getElementById('predictHumiValue').textContent = '--';
+          document.getElementById('accuracyValue').textContent = '--';
+          document.getElementById('predictTempStatus').textContent = 'Chưa đủ dữ liệu (cần 3 mẫu)';
+          document.getElementById('predictHumiStatus').textContent = 'Chưa đủ dữ liệu (cần 3 mẫu)';
+          document.getElementById('accuracyStatus').textContent = 'Chưa có dữ liệu';
+          addLog(`✅ Dữ liệu: T=${data.temperature.toFixed(1)}°C, H=${data.humidity.toFixed(1)}% (Dự đoán: chưa có)`);
+        }
       }
     })
     .catch(err => {
-      document.getElementById('tempValue').textContent = 'ERR';
-      document.getElementById('humiValue').textContent = 'ERR';
-      document.getElementById('rainValue').textContent = 'ERR';
-      document.getElementById('tempStatus').textContent = '❌ Lỗi kết nối';
-      document.getElementById('humiStatus').textContent = '❌ Lỗi kết nối';
-      document.getElementById('rainStatus').textContent = '❌ Lỗi kết nối';
+      addLog(`❌ Lỗi: ${err.message}`, 'error');
+      document.getElementById('tempStatus').textContent = 'Lỗi kết nối';
+      document.getElementById('humiStatus').textContent = 'Lỗi kết nối';
+      document.getElementById('predictTempStatus').textContent = 'Lỗi kết nối';
+      document.getElementById('predictHumiStatus').textContent = 'Lỗi kết nối';
+      document.getElementById('accuracyStatus').textContent = 'Lỗi kết nối';
     });
 }
 
@@ -832,16 +893,43 @@ function showAlert(elementId, message, type) {
 // ==================== CONNECT STATUS ====================
 function checkDeviceStatus() {
   fetch('/sensor', { signal: AbortSignal.timeout(3000) })
-    .then(response => {
-      if (response.ok) {
-        document.getElementById('connectionDot').className = 'status-dot connected';
-        document.getElementById('connectionStatus').textContent = 'Đã kết nối';
-        document.getElementById('ipAddress').textContent = 'IP: ' + window.location.hostname;
+    .then(r => r.json())
+    .then(data => {
+      const dot    = document.getElementById('connectionDot');
+      const status = document.getElementById('connectionStatus');
+      const ipEl   = document.getElementById('ipAddress');
+      const hint   = document.getElementById('connectionHint');
+
+      dot.className = 'status-dot connected';
+
+      const apIp  = data.ap_ip  || window.location.hostname;
+      const staIp = data.sta_ip || '';
+
+      if (staIp) {
+        status.textContent = 'AP + STA đã kết nối';
+        ipEl.textContent   = `AP: ${apIp} | STA: ${staIp}:8080`;
+
+        // Hiển luôn hướng dẫn dashboard
+        if (hint) {
+          hint.style.display = 'block';
+          hint.innerHTML =
+            `ESP32 đang chạy ở <b>dual mode</b> (AP + STA).<br>` +
+            `• Cấu hình tiếp qua AP: <code>http://${apIp}</code><br>` +
+            `• Dashboard (port 8080) khi kết nối WiFi nhà: <code>http://${staIp}:8080</code>`;
+        }
+      } else {
+        status.textContent = 'Chỉ AP (chưa kết nối WiFi nhà)';
+        ipEl.textContent   = `AP: ${apIp}`;
+        if (hint) {
+          hint.style.display = 'block';
+          hint.textContent   = 'ESP32 đang ở chế độ AP. Hãy cấu hình WiFi ở tab "WiFi Settings".';
+        }
       }
     })
     .catch(() => {
       document.getElementById('connectionDot').className = 'status-dot disconnected';
       document.getElementById('connectionStatus').textContent = 'Mất kết nối';
+      document.getElementById('ipAddress').textContent = 'IP: --';
     });
 }
 
