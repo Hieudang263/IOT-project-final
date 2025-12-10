@@ -124,24 +124,24 @@ void tinyml_loop() {
   }
 
   // ---- 5) Xuất UART và đẩy vào queue ----
-  Serial.print("{\"current_temp\": ");
-  Serial.print(t, 2);
-  Serial.print(", \"current_humi\": ");
-  Serial.print(h, 2);
+  // Serial.print("{\"current_temp\": ");  // ❌ TẮT
+  // Serial.print(t, 2);
+  // Serial.print(", \"current_humi\": ");
+  // Serial.print(h, 2);
 
   PredictData predictData;
   predictData.has_data = false;
 
   if (!buffer_full) {
-      Serial.println(", \"predicted_temp\": null, \"predicted_humi\": null, \"accuracy\": null}");
+      // Serial.println(", \"predicted_temp\": null, \"predicted_humi\": null, \"accuracy\": null}");  // ❌ TẮT
   } else {
-      Serial.print(", \"predicted_temp\": ");
-      Serial.print(pred_t, 2);
-      Serial.print(", \"predicted_humi\": ");
-      Serial.print(pred_h, 2);
-      Serial.print(", \"accuracy\": ");
-      Serial.print((int)acc);
-      Serial.println("}");
+      // Serial.print(", \"predicted_temp\": ");  // ❌ TẮT
+      // Serial.print(pred_t, 2);
+      // Serial.print(", \"predicted_humi\": ");
+      // Serial.print(pred_h, 2);
+      // Serial.print(", \"accuracy\": ");
+      // Serial.print((int)acc);
+      // Serial.println("}");  // ❌ TẮT
       
       // Đẩy vào queue để webserver lấy
       predictData.predicted_temp = pred_t;
