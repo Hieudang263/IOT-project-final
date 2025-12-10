@@ -43,8 +43,13 @@ bool mqttReconnect() {
         return false;
     }
 
-    // ✅ Check WiFi
-    if (!WiFi.isConnected() || WiFi.getMode() != WIFI_STA) {
+    // ✅ Check WiFi - FIXED for dual mode (AP+STA)
+    if (!WiFi.isConnected()) {
+        static bool logged = false;
+        if (!logged) {
+            Serial.println("⚠️ WiFi not connected, cannot connect MQTT");
+            logged = true;
+        }
         return false;
     }
 

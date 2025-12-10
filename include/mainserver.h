@@ -21,7 +21,7 @@ void setLED(int num, bool state, int brightness);
 
 void main_server_task(void *pvParameters);
 
-#define LED1_PIN 16
+#define LED1_PIN 48
 #define LED2_PIN 17
 #define PWM_FREQ 5000
 #define PWM_RESOLUTION 8

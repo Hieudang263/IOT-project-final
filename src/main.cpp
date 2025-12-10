@@ -79,9 +79,8 @@ void setup()
   pinMode(LED1_PIN, OUTPUT); // BLUE
   pinMode(LED2_PIN, OUTPUT); // GREEN
 
-  // xTaskCreatePinnedToCore(led_blinky, "Task LED Blink", 2048, NULL, 1, NULL, 0);
-  // xTaskCreatePinnedToCore(neo_blinky, "Task NEO Blink", 4096, NULL, 6, NULL, 0);
-  // xTaskCreatePinnedToCore(neo_blinky, "Task NEO Blink", 2048, NULL, 6, NULL, 1);
+  //xTaskCreatePinnedToCore(led_blinky, "Task LED Blink", 2048, NULL, 1, NULL, 0);
+  //xTaskCreatePinnedToCore(neo_blinky, "Task NEO Blink", 4096, NULL, 6, NULL, 0);
   //xTaskCreatePinnedToCore(temp_humi_monitor, "Task TEMP HUMI Monitor", 8192, NULL, 4, NULL, 1);
   //xTaskCreatePinnedToCore(reportTempAndHumidity, "Report T and H", 8192, NULL, 3, &tempHumidTaskHandle, 0);
   //xTaskCreatePinnedToCore(waterSensing, "Water sensing", 2048, NULL, 4, NULL, 0);
@@ -89,14 +88,13 @@ void setup()
   //xTaskCreatePinnedToCore(switchLCD, "Switching messages", 8192, NULL, 2, NULL, 1);
   // xTaskCreatePinnedToCore(printTH, "Print Temp and Humidity", 2048, NULL, 1, NULL, 1);
   // xTaskCreatePinnedToCore(printCondition, "Print Condition", 2048, NULL, 1, NULL, 1);
-  // xTaskCreatePinnedToCore(main_server_task, "Task Main Server" ,8192  ,NULL  ,3 , NULL, 0);
    xTaskCreatePinnedToCore(tiny_ml_task, "Tiny ML Task" ,8192  ,NULL  ,3 , NULL, 0);
   // xTaskCreatePinnedToCore(coreiot_task, "CoreIOT Task" ,8192  ,NULL  ,2 , NULL, 0);
   // xTaskCreatePinnedToCore(Task_Toogle_BOOT, "Task_Toogle_BOOT", 4096, NULL, 1, NULL, 0);
   // xTaskCreatePinnedToCore(fanDrive, "Controling fan", 2048, NULL, 2, NULL, 1);
   xTaskCreatePinnedToCore(main_server_task, "MainServer80", 8192, NULL, 2, NULL, 1);
   xTaskCreatePinnedToCore(task_mqtt, "MQTT", 4096, NULL, 1, NULL, 1);
-  xTaskCreatePinnedToCore(temp_humi_sht30_oled, "Temp Humidity SHT30", 8192, NULL, 4, NULL, 0);
+  //xTaskCreatePinnedToCore(temp_humi_sht30_oled, "Temp Humidity SHT30", 8192, NULL, 4, NULL, 0);
 }
 
 void loop()
