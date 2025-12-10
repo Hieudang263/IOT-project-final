@@ -6,6 +6,7 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "LiquidCrystal_I2C.h"
+#include "freertos/queue.h"
 
 #define LED_GPIO 48
 #define SENSOR_PIN 4
@@ -15,6 +16,9 @@ struct TempHumid{
     float temperature;
     float humidity;
 };
+extern float temperature;
+extern float humidity;
+
 extern bool ap_started;
 
 extern QueueHandle_t TempHumidQueue;
@@ -29,6 +33,9 @@ extern String CORE_IOT_SERVER;
 extern String CORE_IOT_PORT;
 extern boolean isWifiConnected;
 extern SemaphoreHandle_t xBinarySemaphoreInternet;
+extern SemaphoreHandle_t xTempHumiSemaphore;
+extern SemaphoreHandle_t xHumidityMutex;
+extern SemaphoreHandle_t PrintOnLCDSemaphore;
 
 // Thêm struct cho dữ liệu dự đoán
 struct PredictData {

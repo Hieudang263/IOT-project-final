@@ -1,7 +1,8 @@
 #include "global.h"
+LiquidCrystal_I2C lcd(0x21, 16, 2);
 
-QueueHandle_t TempHumidQueue = xQueueCreate(1, sizeof(TempHumid));
-QueueHandle_t PredictQueue = xQueueCreate(1, sizeof(PredictData));
+float temperature = 0;
+float humidity = 0;
 
 String WIFI_SSID = "";
 String WIFI_PASS = "";
@@ -22,3 +23,7 @@ String wifi_password = "123456789";
 
 boolean isWifiConnected = false;
 SemaphoreHandle_t xBinarySemaphoreInternet = xSemaphoreCreateBinary();
+SemaphoreHandle_t xTempHumiSemaphore = NULL;
+SemaphoreHandle_t xHumidityMutex = NULL;
+QueueHandle_t TempHumidQueue = NULL;
+SemaphoreHandle_t PrintOnLCDSemaphore = xSemaphoreCreateMutex();

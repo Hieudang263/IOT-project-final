@@ -1,65 +1,43 @@
-// #include "temp_humi_monitor.h"
-// #include "printLCD.h"
-// // #define DHTPIN 2
-// // #define DHTTYPE DHT11
+#include "temp_humi_monitor.h"
 
-// DHT20 dht20;
-// // DHT dht(DHTPIN, DHTTYPE);
+DHT20 dht20;
 
-// SemaphoreHandle_t xTempHumidSemaphore = xSemaphoreCreateBinary();
+void temp_humi_monitor(void *pvParameters){
 
+    Wire.begin(21, 22);
+    dht20.begin();
 
-// #define SCL_Pin  9
-// #define SDA_Pin  8
+    while (1){
+        dht20.read();
+        float temp_val = dht20.getTemperature();
+        float humi_val = dht20.getHumidity();
 
-// // NOTE: CODE WHEN USING DHT20 LIBRARIES AND RELATING PERIPHERALS
-// void temp_humi_monitor(void *pvParameters){
+        // CẬP NHẬT BIẾN TOÀN CỤC (Cho LED/NeoPixel dùng ngay)
+        if (xHumidityMutex != NULL) {
+            if (xSemaphoreTake(xHumidityMutex, portMAX_DELAY) == pdTRUE) {
+                temperature = temp_val; // Đã đổi thành temperature
+                humidity = humi_val;    // Đã đổi thành humidity
+                xSemaphoreGive(xHumidityMutex);
+            }
+        } else {
+            temperature = temp_val;
+            humidity = humi_val;
+        }
 
-//     Wire.begin(SDA_Pin, SCL_Pin);
-//     dht20.begin();
+        // GỬI VÀO QUEUE (Cho LCD và WebServer dùng)
+        if (TempHumidQueue != NULL) {
+            TempHumid data;
+            data.temperature = temp_val;
+            data.humidity = humi_val;
+            // Ghi đè giá trị mới nhất vào Queue
+            xQueueOverwrite(TempHumidQueue, &data);
+        }
 
-//     while (1){
-//         /* code */
-        
-//         dht20.read();
-//         TempHumid th = {dht20.getTemperature(), dht20.getHumidity()};
-//         xQueueOverwrite(TempHumidQueue, &th);
+        // ĐÁNH THỨC TASK LED
+        if (xTempHumiSemaphore != NULL) {
+            xSemaphoreGive(xTempHumiSemaphore);
+        }
 
-//         // Check if any reads failed and exit early
-//         if (isnan(th.temperature) || isnan(th.humidity)) {
-//             Serial.println("Failed to read from DHT sensor! Retrying");
-//             delay(1000);
-//             continue;
-//         }
-
-//         //Update global variables for temperature and humidity
-
-//         // Print the results
-//         xSemaphoreGive(xTempHumidSemaphore);
-
-//         vTaskDelay(2000);
-//     }
-    
-// }
-
-// // void temp_humi_monitor(void *pvParameters) {
-// //     dht.begin();
-// //     while (1) {
-// //         vTaskDelay(pdMS_TO_TICKS(100));
-// //         Serial.println("Reading...");
-// //         float temperature = dht.readTemperature();
-// //         float humidity = dht.readHumidity();
-
-// //         if (isnan(temperature) || isnan(humidity)) {
-// //             Serial.println("Failed to read from DHT11 sensor!");
-// //         } else {
-// //             Serial.print("Humidity: ");
-// //             Serial.print(humidity);
-// //             Serial.print("%  Temperature: ");
-// //             Serial.print(temperature);
-// //             Serial.println("°C");
-// //         }
-
-// //         vTaskDelay(pdMS_TO_TICKS(3000)); 
-// //     }
-// // }
+        vTaskDelay(3000 / portTICK_PERIOD_MS); 
+    }
+}

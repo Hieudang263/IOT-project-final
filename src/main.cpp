@@ -39,8 +39,13 @@ void setup()
 
   // ✅ 2. Create Semaphore BEFORE any task
   xBinarySemaphoreInternet = xSemaphoreCreateBinary();
-  if (xBinarySemaphoreInternet == NULL) {
-      Serial.println("❌ Failed to create semaphore!");
+  xTempHumiSemaphore = xSemaphoreCreateBinary();
+  xHumidityMutex = xSemaphoreCreateMutex();
+  QueueHandle_t TempHumidQueue = xQueueCreate(1, sizeof(TempHumid));
+  QueueHandle_t PredictQueue = xQueueCreate(1, sizeof(PredictData));
+  if (TempHumidQueue == NULL) Serial.println("❌ Failed to create TempHumidQueue");
+  if (xBinarySemaphoreInternet == NULL || xTempHumiSemaphore == NULL || xHumidityMutex == NULL) {
+      Serial.println("❌ Failed to create one of the semaphores!");
       return;
   }
   Serial.println("✅ Semaphore created");
@@ -79,9 +84,9 @@ void setup()
   pinMode(LED1_PIN, OUTPUT); // BLUE
   pinMode(LED2_PIN, OUTPUT); // GREEN
 
-  //xTaskCreatePinnedToCore(led_blinky, "Task LED Blink", 2048, NULL, 1, NULL, 0);
-  //xTaskCreatePinnedToCore(neo_blinky, "Task NEO Blink", 4096, NULL, 6, NULL, 0);
-  //xTaskCreatePinnedToCore(temp_humi_monitor, "Task TEMP HUMI Monitor", 8192, NULL, 4, NULL, 1);
+  xTaskCreate(led_blinky, "Task LED Blink", 2048, NULL, 2, NULL);
+  xTaskCreate(neo_blinky, "Task NEO Blink", 4096, NULL, 2, NULL);
+  xTaskCreate(temp_humi_monitor, "Task TEMP HUMI Monitor", 4096, NULL, 2, NULL);
   //xTaskCreatePinnedToCore(reportTempAndHumidity, "Report T and H", 8192, NULL, 3, &tempHumidTaskHandle, 0);
   //xTaskCreatePinnedToCore(waterSensing, "Water sensing", 2048, NULL, 4, NULL, 0);
   //xTaskCreatePinnedToCore(reportWaterAmount, "Report Water Amount", 8192, NULL, 3, &waterTaskHandle, 1);
