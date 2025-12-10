@@ -22,6 +22,7 @@ extern float humidity;
 extern bool ap_started;
 
 extern QueueHandle_t TempHumidQueue;
+extern QueueHandle_t PredictQueue;
 
 extern LiquidCrystal_I2C lcd;
 

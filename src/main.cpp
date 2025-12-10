@@ -6,7 +6,7 @@
 #include "temp_humi_sht30_oled.h"
 #include "mainserver.h"
 #include "tinyml.h"
-
+#include "printLCD.h"
 #include "coreiot.h"
 #include "config_coreiot.h"
 #include "task_webserver.h"
@@ -41,9 +41,10 @@ void setup()
   xBinarySemaphoreInternet = xSemaphoreCreateBinary();
   xTempHumiSemaphore = xSemaphoreCreateBinary();
   xHumidityMutex = xSemaphoreCreateMutex();
-  QueueHandle_t TempHumidQueue = xQueueCreate(1, sizeof(TempHumid));
-  QueueHandle_t PredictQueue = xQueueCreate(1, sizeof(PredictData));
+  TempHumidQueue = xQueueCreate(1, sizeof(TempHumid));
+  PredictQueue = xQueueCreate(1, sizeof(PredictData));
   if (TempHumidQueue == NULL) Serial.println("❌ Failed to create TempHumidQueue");
+  if (PredictQueue == NULL) Serial.println("❌ Failed to create PredictQueue");
   if (xBinarySemaphoreInternet == NULL || xTempHumiSemaphore == NULL || xHumidityMutex == NULL) {
       Serial.println("❌ Failed to create one of the semaphores!");
       return;

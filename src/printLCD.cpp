@@ -10,7 +10,6 @@ bool currentState;
 
 TaskHandle_t waterTaskHandle = NULL;
 TaskHandle_t tempHumidTaskHandle = NULL;
-SemaphoreHandle_t PrintOnLCDSemaphore = xSemaphoreCreateMutex();
 
 void reportTempAndHumidity(void* pvParameters){
     

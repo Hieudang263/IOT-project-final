@@ -26,4 +26,5 @@ SemaphoreHandle_t xBinarySemaphoreInternet = xSemaphoreCreateBinary();
 SemaphoreHandle_t xTempHumiSemaphore = NULL;
 SemaphoreHandle_t xHumidityMutex = NULL;
 QueueHandle_t TempHumidQueue = NULL;
+QueueHandle_t PredictQueue = NULL;
 SemaphoreHandle_t PrintOnLCDSemaphore = xSemaphoreCreateMutex();
