@@ -50,7 +50,7 @@ void setupPWM() {
     led1Strip.begin();
     led1Strip.clear();
     led1Strip.show();
-    Serial.println("[PWM] LED1 configured as NeoPixel on GPIO16");
+    Serial.println("[PWM] LED1 configured as NeoPixel on GPIO48");  // Sửa từ GPIO16
   } else {
     ledcSetup(LED1_CHANNEL, PWM_FREQ, PWM_RESOLUTION);
     ledcAttachPin(LED1_PIN, LED1_CHANNEL);
@@ -61,7 +61,7 @@ void setupPWM() {
   ledcAttachPin(LED2_PIN, LED2_CHANNEL);
   ledcWrite(LED2_CHANNEL, 0);
 
-  Serial.println("[PWM] Initialized (LED1:GPIO16, LED2:GPIO17 PWM)");
+  Serial.println("[PWM] Initialized (LED1:GPIO48, LED2:GPIO17 PWM)");  // Sửa từ GPIO2
 }
 
 void setLED(int num, bool state, int brightness) {

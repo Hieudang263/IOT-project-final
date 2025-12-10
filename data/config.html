@@ -75,7 +75,7 @@
 
     .content-section { display: none; animation: fadeIn 0.3s ease; }
     .content-section.active { display: block; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1, transform: translateY(0); } }
 
     .card {
       background: white;
@@ -289,7 +289,7 @@
             <div class="led-title">
               <div class="led-icon" id="led1Icon">💡</div>
               <div>
-                <span class="led-name">LED 1 (GPIO 16)</span>
+                <span class="led-name">LED 1 (GPIO 48)</span>
                 <div class="led-status" id="led1Status">OFF</div>
               </div>
             </div>
@@ -314,7 +314,7 @@
             <div class="led-title">
               <div class="led-icon" id="led2Icon">💡</div>
               <div>
-                <span class="led-name">LED 2 (GPIO 17)</span>
+                <span class="led-name">LED 2 (GPIO 17)</span>  <!-- Sửa từ GPIO 2 -->
                 <div class="led-status" id="led2Status">OFF</div>
               </div>
             </div>
