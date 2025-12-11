@@ -44,9 +44,7 @@ void setup()
   PrintOnLCDSemaphore = xSemaphoreCreateMutex();
   TempHumidQueue = xQueueCreate(1, sizeof(TempHumid));
   PredictQueue = xQueueCreate(1, sizeof(PredictData));
-  if (TempHumidQueue == NULL) Serial.println("❌ Failed to create TempHumidQueue");
-  if (PredictQueue == NULL) Serial.println("❌ Failed to create PredictQueue");
-  if (!xTempHumiSemaphore || !xHumidityMutex || !PrintOnLCDSemaphore || !TempHumidQueue) {
+  if (!TempHumidQueue || !PredictQueue || !xTempHumiSemaphore || !xHumidityMutex || !PrintOnLCDSemaphore) {
       Serial.println("❌ Failed to create one of the semaphores!");
       return;
   }
@@ -89,7 +87,7 @@ void setup()
   xTaskCreate(led_blinky, "Task LED Blink", 3072, NULL, 2, NULL);
   xTaskCreate(neo_blinky, "Task NEO Blink", 5120, NULL, 2, NULL);
   xTaskCreate(temp_humi_monitor, "Task TEMP HUMI Monitor", 5120, NULL, 2, NULL);
-  //xTaskCreatePinnedToCore(reportTempAndHumidity, "Report T and H", 8192, NULL, 3, &tempHumidTaskHandle, 0);
+  xTaskCreate(reportTempAndHumidity, "LCD TempHumi", 5120, NULL, 2, &tempHumidTaskHandle);
   //xTaskCreatePinnedToCore(waterSensing, "Water sensing", 2048, NULL, 4, NULL, 0);
   //xTaskCreatePinnedToCore(reportWaterAmount, "Report Water Amount", 8192, NULL, 3, &waterTaskHandle, 1);
   //xTaskCreatePinnedToCore(switchLCD, "Switching messages", 8192, NULL, 2, NULL, 1);
