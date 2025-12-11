@@ -20,6 +20,11 @@ void reportTempAndHumidity(void* pvParameters){
     TempHumid receiver; // Biến hứng dữ liệu từ Queue
 
     while(1){
+        if (PrintOnLCDSemaphore == NULL) {
+            vTaskDelay(100);
+            continue;
+        }
+        
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
         TickType_t startTime = xTaskGetTickCount();
 

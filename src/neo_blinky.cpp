@@ -73,7 +73,12 @@ void neo_blinky(void *pvParameters){
 
     float currentHumi = 0.0;
 
-    while(1) {                          
+    while(1) {        
+        if (xHumidityMutex == NULL) {
+            vTaskDelay(100);
+            continue;
+        }
+        
         if (xSemaphoreTake(xHumidityMutex, portMAX_DELAY) == pdTRUE) {
             // Dùng biến chuẩn "humidity"
             currentHumi = humidity;

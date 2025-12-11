@@ -22,9 +22,9 @@ String wifi_ssid = "abcde";
 String wifi_password = "123456789";
 
 boolean isWifiConnected = false;
-SemaphoreHandle_t xBinarySemaphoreInternet = xSemaphoreCreateBinary();
+SemaphoreHandle_t xBinarySemaphoreInternet = NULL;
 SemaphoreHandle_t xTempHumiSemaphore = NULL;
 SemaphoreHandle_t xHumidityMutex = NULL;
 QueueHandle_t TempHumidQueue = NULL;
 QueueHandle_t PredictQueue = NULL;
-SemaphoreHandle_t PrintOnLCDSemaphore = xSemaphoreCreateMutex();
+SemaphoreHandle_t PrintOnLCDSemaphore = NULL;

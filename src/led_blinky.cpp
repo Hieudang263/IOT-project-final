@@ -30,6 +30,11 @@ void led_blinky(void *pvParameters){
   ledcAttachPin(LED_GPIO, LEDC_CHANNEL);
 
   while(1) {
+    if (xTempHumiSemaphore == NULL) {
+        vTaskDelay(100); // Chưa có thì đợi, không được chạy tiếp
+        continue;
+    }
+    
     if (xSemaphoreTake(xTempHumiSemaphore, portMAX_DELAY) == pdTRUE) {
       // Dùng biến toàn cục chuẩn "temperature"
       float currentTemp = temperature;
