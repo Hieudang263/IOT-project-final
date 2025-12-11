@@ -19,7 +19,7 @@ extern bool ap_started;
 
 extern QueueHandle_t TempHumidQueue;
 
-extern LiquidCrystal_I2C lcd;
+//extern LiquidCrystal_I2C lcd;
 
 extern String WIFI_SSID;
 extern String WIFI_PASS;
