@@ -1,7 +1,9 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <PubSubClient.h>
+#include <ArduinoJson.h>
 #include "config_coreiot.h"
+#include "mainserver.h"
 
 WiFiClient mqttClient;
 PubSubClient client(mqttClient);
@@ -10,8 +12,12 @@ unsigned long lastReconnectAttempt = 0;
 String topicCommand;
 String topicTelemetry;
 
+// ✅ Forward declarations
+void setLEDFromRPC(int ledNum, bool state, int brightness);
+bool getLEDStateFromRPC(int ledNum);
+
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
-    Serial.printf("📩 MQTT [%s] => ", topic);
+    Serial.printf("\n📩 MQTT RPC [%s] => ", topic);
     
     String message = "";
     for (int i = 0; i < length; i++) {
@@ -19,7 +25,81 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     }
     Serial.println(message);
     
-    // TODO: Xử lý commands từ CoreIOT
+    // ✅ Xử lý RPC commands từ CoreIOT
+    StaticJsonDocument<512> doc;
+    DeserializationError error = deserializeJson(doc, payload, length);
+    
+    if (error) {
+        Serial.println("❌ JSON parse error: " + String(error.c_str()));
+        return;
+    }
+    
+    // ✅ CoreIOT RPC format: {"method":"setState","params":true} hoặc {"method":"setState","params":50}
+    String method = doc["method"] | "";
+    
+    if (method == "setState") {
+        JsonVariant params = doc["params"];
+        
+        // ✅ Xử lý cả boolean (từ Power button) và number (từ Slider)
+        if (params.is<bool>()) {
+            // Power button: true/false
+            bool state = params.as<bool>();
+            Serial.printf("🎛️ RPC setState(%s)\n", state ? "true" : "false");
+            setLEDFromRPC(1, state, state ? 100 : 0);  // LED 1 (GPIO 48)
+        } 
+        else if (params.is<int>() || params.is<float>()) {
+            // Slider: 0-100
+            int brightness = params.as<int>();
+            brightness = constrain(brightness, 0, 100);
+            bool state = (brightness > 0);
+            
+            Serial.printf("🎛️ RPC setState(%d%%) - LED %s\n", brightness, state ? "ON" : "OFF");
+            setLEDFromRPC(1, state, brightness);  // LED 1 với brightness
+        }
+        
+        // ✅ Gửi response về CoreIOT
+        String response = "{\"result\":true}";
+        client.publish((coreiot_username + "/rpc/response").c_str(), response.c_str());
+        Serial.println("✅ RPC response sent");
+    }
+    else if (method == "getState") {
+        Serial.println("🎛️ RPC getState()");
+        
+        // ✅ Trả về brightness (0-100) thay vì chỉ true/false
+        int brightness = 0;
+        if (led1.isOn) {
+            brightness = led1.brightness;  // Trả về độ sáng hiện tại
+        }
+        
+        // ✅ Gửi response về CoreIOT (slider cần giá trị số)
+        String response = "{\"result\":" + String(brightness) + "}";
+        client.publish((coreiot_username + "/rpc/response").c_str(), response.c_str());
+        Serial.println("✅ RPC response sent: " + String(brightness) + "%");
+    }
+    else if (method == "setValue") {
+        // ✅ Switch Control: setValue(true/false)
+        bool state = doc["params"] | false;
+        Serial.printf("🎛️ RPC setValue(%s) - Switch Control\n", state ? "true" : "false");
+        setLEDFromRPC(1, state, state ? 100 : 0);  // LED 1
+        
+        // ✅ Gửi response về CoreIOT
+        String response = "{\"result\":true}";
+        client.publish((coreiot_username + "/rpc/response").c_str(), response.c_str());
+        Serial.println("✅ RPC response sent");
+    }
+    else if (method == "getValue") {
+        // ✅ Switch Control: getValue() - trả về true/false
+        Serial.println("🎛️ RPC getValue() - Switch Control");
+        bool state = getLEDStateFromRPC(1);  // LED 1
+        
+        // ✅ Gửi response về CoreIOT (Switch cần true/false)
+        String response = "{\"result\":" + String(state ? "true" : "false") + "}";
+        client.publish((coreiot_username + "/rpc/response").c_str(), response.c_str());
+        Serial.println("✅ RPC response sent: " + String(state ? "ON" : "OFF"));
+    }
+    else {
+        Serial.println("⚠️ Unknown RPC method: " + method);
+    }
 }
 
 bool mqttReconnect() {
@@ -92,11 +172,42 @@ bool mqttReconnect() {
     if (connected) {
         Serial.println("✅ MQTT connected!");
         
-        // ✅ Subscribe
+        // ✅ Subscribe to commands
         if (client.subscribe(topicCommand.c_str())) {
             Serial.println("✅ Subscribed: " + topicCommand);
         } else {
-            Serial.println("⚠️ Subscribe failed");
+            Serial.println("⚠️ Subscribe failed: " + topicCommand);
+        }
+        
+        // ✅ Subscribe to RPC requests (try multiple patterns)
+        String rpcTopic1 = coreiot_username + "/rpc/request";
+        String rpcTopic2 = "v1/devices/me/rpc/request/+";
+        String rpcTopic3 = coreiot_client_id + "/rpc/request";
+        String rpcTopic4 = coreiot_username + "/#";  // Wildcard - catch ALL messages
+        
+        if (client.subscribe(rpcTopic1.c_str())) {
+            Serial.println("✅ Subscribed RPC: " + rpcTopic1);
+        } else {
+            Serial.println("⚠️ RPC Subscribe failed: " + rpcTopic1);
+        }
+        
+        if (client.subscribe(rpcTopic2.c_str())) {
+            Serial.println("✅ Subscribed RPC: " + rpcTopic2);
+        } else {
+            Serial.println("⚠️ RPC Subscribe failed: " + rpcTopic2);
+        }
+        
+        if (client.subscribe(rpcTopic3.c_str())) {
+            Serial.println("✅ Subscribed RPC: " + rpcTopic3);
+        } else {
+            Serial.println("⚠️ RPC Subscribe failed: " + rpcTopic3);
+        }
+        
+        // 🔍 DEBUG: Subscribe wildcard to see ALL messages
+        if (client.subscribe(rpcTopic4.c_str())) {
+            Serial.println("✅ Subscribed WILDCARD (DEBUG): " + rpcTopic4);
+        } else {
+            Serial.println("⚠️ Wildcard Subscribe failed: " + rpcTopic4);
         }
         
         Serial.println("========================================\n");
@@ -168,4 +279,21 @@ void CORE_IOT_reconnect() {
     if (!isMQTTConnected()) {
         mqttReconnect();
     }
+}
+
+// ✅ RPC - Điều khiển LED từ CoreIOT
+void setLEDFromRPC(int ledNum, bool state, int brightness) {
+    Serial.printf("\n🔧 RPC Control: LED%d = %s @ %d%%\n", 
+                  ledNum, state ? "ON" : "OFF", brightness);
+    setLED(ledNum, state, brightness);
+}
+
+bool getLEDStateFromRPC(int ledNum) {
+    // Lấy trạng thái LED từ biến toàn cục trong mainserver.cpp
+    if (ledNum == 1) {
+        return led1.isOn;
+    } else if (ledNum == 2) {
+        return led2.isOn;
+    }
+    return false;
 }

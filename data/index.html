@@ -130,6 +130,17 @@
             <input type="password" id="mqtt_password" placeholder="Password (MQTT)">
           </div>
 
+          <!-- Tọa độ thiết bị -->
+          <div class="input-group">
+            <i class="fa-solid fa-map-marker-alt"></i>
+            <input type="number" step="0.000001" id="longitude" placeholder="Longitude (Kinh độ)" required>
+          </div>
+
+          <div class="input-group">
+            <i class="fa-solid fa-location-dot"></i>
+            <input type="number" step="0.000001" id="latitude" placeholder="Latitude (Vĩ độ)" required>
+          </div>
+
           <button type="submit" class="btn-save">
             <i class="fa-solid fa-floppy-disk"></i> Lưu cấu hình
           </button>

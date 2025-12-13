@@ -19,6 +19,17 @@ void connectToWiFi();
 String processLedControl(int device, const String &state, int brightness, int &httpCode);
 void setLED(int num, bool state, int brightness);
 
+// ✅ LED State structure
+struct LEDState {
+  bool isOn;
+  int brightness;
+  int pwmValue;
+};
+
+// ✅ Export LED states for RPC access
+extern LEDState led1;
+extern LEDState led2;
+
 void main_server_task(void *pvParameters);
 
 #define LED1_PIN 48

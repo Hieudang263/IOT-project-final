@@ -16,12 +16,6 @@ static const uint8_t LED2_CHANNEL = 1;
 static const bool LED1_IS_NEOPIXEL = true;
 static Adafruit_NeoPixel led1Strip(1, LED1_PIN, NEO_GRB + NEO_KHZ800);
 
-struct LEDState {
-  bool isOn;
-  int brightness;
-  int pwmValue;
-};
-
 LEDState led1 = {false, 50, 127};
 LEDState led2 = {false, 50, 127};
 
@@ -50,7 +44,7 @@ void setupPWM() {
     led1Strip.begin();
     led1Strip.clear();
     led1Strip.show();
-    Serial.println("[PWM] LED1 configured as NeoPixel on GPIO16");
+    Serial.println("[PWM] LED1 configured as NeoPixel on GPIO48");
   } else {
     ledcSetup(LED1_CHANNEL, PWM_FREQ, PWM_RESOLUTION);
     ledcAttachPin(LED1_PIN, LED1_CHANNEL);
@@ -61,7 +55,7 @@ void setupPWM() {
   ledcAttachPin(LED2_PIN, LED2_CHANNEL);
   ledcWrite(LED2_CHANNEL, 0);
 
-  Serial.println("[PWM] Initialized (LED1:GPIO16, LED2:GPIO17 PWM)");
+  Serial.println("[PWM] Initialized (LED1:GPIO48, LED2:GPIO17 PWM)");
 }
 
 void setLED(int num, bool state, int brightness) {

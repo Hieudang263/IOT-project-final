@@ -271,6 +271,8 @@ async function loadCoreIOTConfig() {
         if (data.port)      document.getElementById('port').value = data.port;
         if (data.client_id) document.getElementById('client_id').value = data.client_id;
         if (data.username)  document.getElementById('mqtt_username').value = data.username;
+        if (data.longitude !== undefined) document.getElementById('longitude').value = data.longitude;
+        if (data.latitude !== undefined)  document.getElementById('latitude').value = data.latitude;
 
         const mqttPassInput = document.getElementById('mqtt_password');
         mqttPassInput.value = "";
@@ -292,6 +294,8 @@ document.getElementById("settingsForm").addEventListener("submit", async functio
     const client_id     = document.getElementById("client_id").value.trim();
     const mqtt_username = document.getElementById("mqtt_username").value.trim();
     const mqtt_password = document.getElementById("mqtt_password").value.trim();
+    const longitude     = parseFloat(document.getElementById("longitude").value.trim()) || 0;
+    const latitude      = parseFloat(document.getElementById("latitude").value.trim()) || 0;
 
     const port = parseInt(portValue, 10);
     if (!Number.isInteger(port) || port <= 0 || port > 65535) {
@@ -309,7 +313,9 @@ document.getElementById("settingsForm").addEventListener("submit", async functio
         port      : port,
         client_id : client_id,
         username  : mqtt_username,
-        password  : mqtt_password || "***"
+        password  : mqtt_password || "***",
+        longitude : longitude,
+        latitude  : latitude
     };
 
     try {

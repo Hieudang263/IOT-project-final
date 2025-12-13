@@ -47,6 +47,8 @@ void setupCoreIOTAPI() {
         doc["client_id"] = coreiot_client_id;
         doc["username"] = coreiot_username;
         doc["password_set"] = (coreiot_password.length() > 0);
+        doc["longitude"] = coreiot_longitude;
+        doc["latitude"] = coreiot_latitude;
 
         String res;
         serializeJson(doc, res);
@@ -72,6 +74,8 @@ void setupCoreIOTAPI() {
             if (pwd != "***" && pwd != "") {
                 coreiot_password = pwd;
             }
+            coreiot_longitude = doc["longitude"] | 0.0;
+            coreiot_latitude = doc["latitude"] | 0.0;
 
             saveCoreIOTConfig();
             req->send(200, "application/json", "{\"success\":true}");

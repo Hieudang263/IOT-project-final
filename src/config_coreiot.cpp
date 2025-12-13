@@ -10,6 +10,8 @@ int    coreiot_port      = 0;
 String coreiot_client_id = "";
 String coreiot_username  = "";
 String coreiot_password  = "";
+float  coreiot_longitude = 0.0;
+float  coreiot_latitude  = 0.0;
 
 bool loadCoreIOTConfig() {
     if (!LittleFS.exists("/coreiot.json")) {
@@ -38,6 +40,8 @@ bool loadCoreIOTConfig() {
     coreiot_client_id = doc["client_id"] | "";
     coreiot_username  = doc["username"] | "";
     coreiot_password  = doc["password"] | "";
+    coreiot_longitude = doc["longitude"] | 0.0;
+    coreiot_latitude  = doc["latitude"] | 0.0;
 
     Serial.println("📄 Loaded CoreIOT config:");
     Serial.println("   Server: " + coreiot_server);
@@ -45,6 +49,8 @@ bool loadCoreIOTConfig() {
     Serial.println("   Client ID: " + coreiot_client_id);
     Serial.println("   Username: " + coreiot_username);
     Serial.println("   Password: " + String(coreiot_password.length() > 0 ? "***" : "(empty)"));
+    Serial.println("   Longitude: " + String(coreiot_longitude, 6));
+    Serial.println("   Latitude: " + String(coreiot_latitude, 6));
 
     ///xoá client_id mặc định cũ nếu có 
     if (!coreiot_client_id.isEmpty()) {
@@ -66,6 +72,8 @@ bool saveCoreIOTConfig() {
     doc["client_id"] = coreiot_client_id;
     doc["username"]  = coreiot_username;
     doc["password"]  = coreiot_password;
+    doc["longitude"] = coreiot_longitude;
+    doc["latitude"]  = coreiot_latitude;
 
     File f = LittleFS.open("/coreiot.json", "w");
     if (!f) {

@@ -56,6 +56,10 @@ void task_mqtt(void *pv) {
                         json += ",\"accuracy\":0";
                     }
                     
+                    // Thêm tọa độ (longitude và latitude)
+                    json += ",\"longitude\":" + String(coreiot_longitude, 6);
+                    json += ",\"latitude\":" + String(coreiot_latitude, 6);
+                    
                     json += ",\"status\":\"sensor_active\"}";
                     
                     Serial.println("\n✅ Publishing sensor data + TinyML prediction:");
@@ -79,6 +83,8 @@ void task_mqtt(void *pv) {
                            ",\"predicted_temp\":0"
                            ",\"predicted_humi\":0"
                            ",\"accuracy\":0"
+                           ",\"longitude\":" + String(coreiot_longitude, 6) +
+                           ",\"latitude\":" + String(coreiot_latitude, 6) +
                            ",\"status\":\"no_sensor\"}";
                     
                     Serial.println("\n⚠️ Publishing NO SENSOR status:");
